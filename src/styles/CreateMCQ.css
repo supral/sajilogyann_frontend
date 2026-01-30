@@ -1,0 +1,167 @@
+.create-mcq-container {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.create-mcq-container h2 {
+  color: #0056ff;
+  margin-bottom: 1rem;
+}
+
+.notice {
+  background: #f0f4ff;
+  padding: 1rem;
+  border-left: 4px solid #0056ff;
+  border-radius: 6px;
+  color: #333;
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.mcq-card {
+  background: #f8faff;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 86, 255, 0.1);
+}
+
+.mcq-card h4 {
+  color: #0048ff;
+  margin-bottom: 1rem;
+}
+
+.mcq-card input[type="text"] {
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.95rem;
+  transition: border 0.2s ease;
+}
+
+.mcq-card input[type="text"]:focus {
+  border-color: #0056ff;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.8rem;
+}
+
+.correct-input {
+  border-left: 4px solid #007bff;
+  background: #eef4ff;
+}
+
+.add-question-btn {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+.add-btn {
+  background: #0056ff;
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.add-btn:hover {
+  background: #0042cc;
+}
+
+.submit-btn {
+  display: block;
+  margin: 2rem auto 0;
+  background: linear-gradient(90deg, #0056ff, #007bff);
+  color: #fff;
+  border: none;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  background: #0048e1;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .create-mcq-container {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .create-mcq-container h2 {
+    font-size: 1.5rem;
+  }
+
+  .notice {
+    font-size: 0.9rem;
+    padding: 0.875rem;
+  }
+
+  .mcq-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .mcq-card h4 {
+    font-size: 1.1rem;
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .add-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+
+  .submit-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-mcq-container {
+    padding: 1rem 0.75rem;
+  }
+
+  .create-mcq-container h2 {
+    font-size: 1.25rem;
+  }
+
+  .mcq-card {
+    padding: 1rem 0.75rem;
+  }
+
+  .mcq-card input[type="text"] {
+    font-size: 14px;
+    padding: 0.7rem;
+  }
+
+  .add-btn,
+  .submit-btn {
+    width: 100%;
+    padding: 0.7rem 1rem;
+  }
+}

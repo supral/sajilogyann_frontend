@@ -1,0 +1,264 @@
+/* WRAPPER */
+.student-nav {
+  width: 100%;
+  background: #ffffff;
+  border-bottom: 1px solid #eef1f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 50px;
+  font-family: "Poppins", sans-serif;
+  box-sizing: border-box;
+  position: sticky; /* remove if you don't want sticky */
+  top: 0;
+  z-index: 1000;
+}
+
+/* LEFT GROUP */
+.student-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+/* Logo + Title */
+.student-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-logo {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+
+.student-logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0a69ed;
+  white-space: nowrap;
+}
+
+/* Browse Button */
+.student-browse-btn {
+  background: #ffffff;
+  border: 1px solid #d0d5e0;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* Search Box */
+.student-search {
+  background: #f5f5f7;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  width: 350px;
+  max-width: 40vw;
+}
+
+.student-search-icon {
+  font-size: 14px;
+  color: #6c6f7a;
+}
+
+.student-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  margin-left: 8px;
+  width: 100%;
+  font-size: 14px;
+  color: #333333;
+}
+
+/* Academy Pro+ pill */
+.student-pro-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #6a5bff, #ff7b4b);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: 14px;
+}
+
+.student-pro-pill i {
+  font-size: 14px;
+}
+
+.student-pro-text {
+  margin-right: 4px;
+}
+
+.student-pro-new {
+  font-size: 10px;
+  background: #ffb71b;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+/* RIGHT GROUP */
+.student-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* University Programs link */
+.student-uni-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: #222222;
+}
+
+/* Profile wrapper (for dropdown positioning) */
+.student-profile-wrapper {
+  position: relative;
+}
+
+/* Profile circle */
+.student-profile-circle {
+  background: #0099ff;
+  color: #ffffff;
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Dropdown menu */
+.student-profile-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  padding: 8px 0;
+  min-width: 180px;
+  z-index: 1200;
+}
+
+/* Dropdown items */
+.student-profile-item {
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: #333333;
+  font-family: "Poppins", sans-serif;
+}
+
+.student-profile-item:hover {
+  background: #f5f7fb;
+}
+
+.student-profile-item.logout {
+  color: #e53935;
+}
+
+/* Eye-catching logout button */
+.tnav__logout {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 16px !important;
+  margin: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: calc(100% - 16px) !important;
+  justify-content: center !important;
+}
+
+.tnav__logout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.tnav__logout:hover::before {
+  left: 100%;
+}
+
+.tnav__logout:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4) !important;
+}
+
+.tnav__logout:active {
+  transform: translateY(0) scale(0.98) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+.tnav__logout .tnav__mi {
+  color: white !important;
+  font-size: 16px !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* Optional: small-screen tweak */
+@media (max-width: 900px) {
+  .student-nav {
+    padding: 10px 20px;
+  }
+
+  .student-search {
+    width: 220px;
+  }
+}
+.clickable-brand {
+  cursor: pointer;
+}
+
+.student-pro-pill {
+  cursor: pointer;
+}

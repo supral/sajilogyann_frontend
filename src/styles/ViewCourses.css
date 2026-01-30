@@ -1,0 +1,255 @@
+.teacher-dashboard-layout {
+  font-family: "Poppins", sans-serif;
+  background-color: #f7f9fc;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== BODY ===== */
+.teacher-body {
+  display: flex;
+  margin-top: 70px; /* space below navbar */
+}
+
+/* ===== SIDEBAR ===== */
+.teacher-sidebar {
+  background: #eef1f7;
+  width: 260px;
+  height: calc(100vh - 70px);
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.teacher-sidebar button {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  padding: 0.8rem 1rem;
+  width: 100%;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.teacher-sidebar button:hover,
+.teacher-sidebar button.active {
+  background: #dce3f7;
+  color: #0056ff;
+}
+
+.dropdown-menu {
+  padding-left: 1.5rem;
+  margin-top: 0.4rem;
+}
+
+.dropdown-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdown-menu li {
+  padding: 0.4rem 0;
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.dropdown-menu li:hover,
+.dropdown-menu li.active {
+  color: #0056ff;
+  font-weight: 500;
+}
+
+/* ===== MAIN CONTENT ===== */
+.teacher-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.view-courses {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.view-courses h2 {
+  color: #0056ff;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.view-courses p {
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+/* ===== COURSE GRID ===== */
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.course-card {
+  background: #fdfdfd;
+  border: 1px solid #dfe4f2;
+  border-radius: 10px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+}
+
+.course-card h3 {
+  font-size: 1.2rem;
+  color: #222;
+  margin-bottom: 0.5rem;
+}
+
+.course-category {
+  color: #0056ff;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.course-desc {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+.course-duration {
+  font-size: 0.9rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+/* ===== CARD ACTIONS ===== */
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.edit-btn {
+  background: #e8f0ff;
+  color: #0056ff;
+}
+
+.edit-btn:hover {
+  background: #0056ff;
+  color: #fff;
+}
+
+.delete-btn {
+  background: #ffe8e8;
+  color: #cc0000;
+}
+
+.delete-btn:hover {
+  background: #cc0000;
+  color: #fff;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 992px) {
+  .course-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .teacher-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .view-courses {
+    padding: 1.5rem 1rem;
+    border-radius: 8px;
+  }
+
+  .view-courses h2 {
+    font-size: 1.25rem;
+  }
+
+  .course-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .course-card {
+    padding: 1rem;
+  }
+
+  .course-card h3 {
+    font-size: 1.1rem;
+  }
+
+  .card-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .edit-btn,
+  .delete-btn {
+    flex: 1;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .teacher-content {
+    padding: 1rem 0.75rem;
+  }
+
+  .view-courses {
+    padding: 1rem;
+  }
+
+  .view-courses h2 {
+    font-size: 1.1rem;
+  }
+
+  .view-courses p {
+    font-size: 0.85rem;
+  }
+
+  .course-card {
+    padding: 0.75rem;
+  }
+
+  .course-card h3 {
+    font-size: 1rem;
+  }
+
+  .course-desc {
+    font-size: 0.85rem;
+  }
+}

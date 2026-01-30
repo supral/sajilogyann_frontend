@@ -1,0 +1,671 @@
+/* ================================
+   ADMIN PANEL (Professional UI)
+   Replace file: src/styles/admin.css
+================================ */
+
+/* ---- Theme Tokens ---- */
+:root {
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: rgba(15, 23, 42, 0.72);
+
+  --border: rgba(15, 23, 42, 0.08);
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+
+  --primary: #2563eb;
+  --primary-600: #1d4ed8;
+  --primary-soft: rgba(37, 99, 235, 0.12);
+
+  --danger: #ef4444;
+  --danger-600: #dc2626;
+
+  --warning: #f59e0b;
+  --warning-600: #d97706;
+
+  --success: #22c55e;
+
+  --sidebar-bg: #0b1220;
+  --sidebar-text: rgba(255, 255, 255, 0.86);
+  --sidebar-muted: rgba(255, 255, 255, 0.68);
+  --sidebar-active: rgba(37, 99, 235, 0.18);
+
+  --radius: 14px;
+}
+
+/* ---- Base Layout ---- */
+.admin-layout {
+  font-family: "Poppins", sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hamburger Button Bar - Below Navbar */
+.hamburger-bar {
+  position: fixed;
+  top: 80px; /* Admin navbar height */
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  z-index: 990; /* Below navbar (1000) but above sidebar (40-50) */
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.hamburger-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+.hamburger-btn i {
+  font-size: 16px;
+}
+
+
+/* ---- Main container ---- */
+.admin-container {
+  display: flex;
+  flex: 1;
+  margin-top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+.admin-sidebar {
+  width: 280px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  height: calc(100vh - 128px); /* Navbar (80px) + Hamburger bar (48px) */
+  position: fixed;
+  top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+  left: 0;
+  padding: 14px 10px;
+  overflow-y: auto;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.08);
+  transition: left 0.28s ease;
+  z-index: 40; /* Below hamburger bar (990) but above content */
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 14px;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #fff;
+}
+
+.menu-toggle {
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  display: none;
+  transition: transform 0.08s ease, background 0.2s ease;
+}
+.menu-toggle:active {
+  transform: translateY(1px);
+}
+.menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Show hamburger on mobile */
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+}
+
+/* Menu */
+.sidebar-menu {
+  list-style: none;
+  padding: 6px 6px 12px;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+
+  padding: 11px 12px;
+  border-radius: 12px;
+
+  color: var(--sidebar-text);
+  background: transparent;
+  border: 1px solid transparent;
+
+  transition: background 0.2s ease, border 0.2s ease, transform 0.06s ease;
+}
+
+.menu-item .icon {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 14px;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.menu-item:active {
+  transform: translateY(1px);
+}
+
+.menu-item.active {
+  background: var(--sidebar-active);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #fff;
+}
+
+.menu-item.active .icon {
+  background: rgba(37, 99, 235, 0.4);
+}
+
+/* Sidebar scrollbar */
+.admin-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+}
+
+/* =========================
+   MAIN CONTENT
+========================= */
+.admin-main {
+  flex: 1;
+  margin-left: 280px;
+  padding: 22px 22px 26px;
+  overflow-y: auto;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+/* ✅ Common card used in dashboard */
+.admin-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+/* =========================
+   DASHBOARD OVERVIEW CARDS
+========================= */
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.stat-card {
+  grid-column: span 3;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+
+  padding: 16px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 0.12s ease, box-shadow 0.2s ease;
+}
+
+.stat-card b {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+/* Make stat cards responsive */
+@media (max-width: 1200px) {
+  .stat-card { grid-column: span 6; }
+}
+@media (max-width: 720px) {
+  .stat-card { grid-column: span 12; }
+}
+
+/* Placeholder */
+.placeholder {
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* =========================
+   SEARCH BAR
+========================= */
+.search-bar-container {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 16px;
+}
+
+.search-bar {
+  width: min(720px, 92%);
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  outline: none;
+  font-size: 14px;
+  background: var(--card);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.search-bar:focus {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+/* =========================
+   TABLE (User/Course/etc)
+========================= */
+.user-management {
+  margin-top: 18px;
+  background: var(--card);
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.user-management h2 {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-management h2::before {
+  content: "";
+  width: 10px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--primary);
+  display: inline-block;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.user-table th,
+.user-table td {
+  padding: 12px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.user-table th {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--text);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  font-size: 12px;
+}
+
+.user-table tbody tr {
+  background: #fff;
+  transition: background 0.12s ease;
+}
+
+.user-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.user-table td {
+  color: rgba(15, 23, 42, 0.86);
+}
+
+/* =========================
+   BUTTONS
+========================= */
+.user-table button,
+.edit-btn,
+.update-btn,
+.delete-btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  transition: transform 0.06s ease, opacity 0.2s ease, background 0.2s ease;
+}
+
+.user-table button:active,
+.edit-btn:active,
+.update-btn:active,
+.delete-btn:active {
+  transform: translateY(1px);
+}
+
+.edit-btn {
+  background: rgba(245, 158, 11, 0.18);
+  color: #7a4b00;
+}
+.edit-btn:hover {
+  background: rgba(245, 158, 11, 0.26);
+}
+
+.update-btn {
+  background: var(--primary);
+  color: #fff;
+}
+.update-btn:hover {
+  background: var(--primary-600);
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.18);
+  color: #7f1d1d;
+}
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.26);
+}
+
+/* Small utility */
+.user-name-link {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 900;
+}
+.user-name-link:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   USER DETAIL CARD
+========================= */
+.user-detail-card {
+  background: var(--card);
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-top: 14px;
+}
+
+.detail-section {
+  margin-top: 14px;
+  border-left: 4px solid var(--primary);
+  padding-left: 12px;
+}
+
+.detail-section p,
+.detail-section li {
+  color: rgba(15, 23, 42, 0.85);
+  font-size: 13px;
+  margin: 6px 0;
+}
+
+.detail-section ul {
+  list-style: disc;
+  padding-left: 18px;
+}
+
+/* =========================
+   MODAL
+========================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.modal-content {
+  background: var(--card);
+  padding: 16px;
+  border-radius: 16px;
+  width: 460px;
+  max-width: 96%;
+  border: 1px solid var(--border);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.18s ease-in-out;
+}
+
+.modal-content h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-weight: 900;
+}
+
+.modal-content p {
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.modal-content label {
+  display: block;
+  font-weight: 900;
+  margin: 10px 0 6px;
+  color: rgba(15, 23, 42, 0.92);
+  font-size: 13px;
+}
+
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.modal-content input:focus,
+.modal-content select:focus {
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 992px) {
+  .menu-toggle { 
+    display: inline-flex !important; 
+  }
+
+  .admin-sidebar { 
+    left: -290px; 
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .admin-sidebar.show { 
+    left: 0; 
+  }
+
+  .admin-main {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .user-table th,
+  .user-table td { padding: 10px; }
+
+  .dashboard-overview {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .stat-card {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-header h3 { 
+    display: block; 
+    font-size: 13px;
+  }
+
+  .page-title { 
+    font-size: 18px; 
+  }
+
+  .admin-sidebar {
+    width: 280px;
+    max-width: 85vw;
+    top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+    height: calc(100vh - 128px);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    z-index: 40; /* Below hamburger bar (990) but above overlay (35) */
+  }
+
+  .admin-main {
+    padding: 14px;
+    margin-top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+  }
+
+  .admin-container {
+    margin-top: 0;
+  }
+
+  .dashboard-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    grid-column: span 1;
+  }
+
+  .page-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-bar-container {
+    margin: 10px 0;
+  }
+
+  .search-bar {
+    width: 100%;
+  }
+}
+
+/* Sidebar Overlay for Mobile */
+.admin-sidebar-overlay {
+  position: fixed;
+  top: 128px; /* Below navbar and hamburger bar */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 35; /* Below sidebar (40) */
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .admin-sidebar-overlay {
+    display: block;
+  }
+}
+
+@media (min-width: 993px) {
+  .admin-sidebar-overlay {
+    display: none !important;
+  }
+
+  .admin-sidebar {
+    left: 0 !important;
+    top: 128px !important; /* Navbar (80px) + Hamburger bar (48px) */
+    height: calc(100vh - 128px) !important;
+    z-index: 40 !important; /* Below hamburger bar (990) but above content */
+  }
+}

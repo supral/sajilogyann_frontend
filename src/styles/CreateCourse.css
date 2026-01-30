@@ -1,0 +1,239 @@
+/* ===== LAYOUT ===== */
+.teacher-dashboard-layout {
+  font-family: "Poppins", sans-serif;
+  background-color: #f7f9fc;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== NAVBAR ===== */
+.teacher-navbar {
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.nav-logo {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
+.nav-left h2 {
+  color: #0056ff;
+  font-weight: 600;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.welcome-text {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* ===== SIDEBAR ===== */
+.teacher-body {
+  display: flex;
+  margin-top: 70px;
+}
+
+.teacher-sidebar {
+  background: #eef1f7;
+  width: 260px;
+  height: calc(100vh - 70px);
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.teacher-sidebar button {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+  padding: 0.8rem 1rem;
+  width: 100%;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.teacher-sidebar button:hover,
+.teacher-sidebar button.active {
+  background: #dce3f7;
+  color: #0056ff;
+}
+
+.dropdown-menu {
+  padding-left: 1.5rem;
+  margin-top: 0.4rem;
+}
+
+.dropdown-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dropdown-menu li {
+  padding: 0.4rem 0;
+  color: #333;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.dropdown-menu li:hover,
+.dropdown-menu li.active {
+  color: #0056ff;
+  font-weight: 500;
+}
+
+/* ===== FORM SECTION ===== */
+.teacher-content {
+  flex: 1;
+  padding: 2rem;
+}
+
+.create-course-form {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 2rem auto;
+}
+
+.create-course-form h2 {
+  color: #0056ff;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.create-course-form p {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+.create-course-form label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  color: #333;
+}
+
+.create-course-form input,
+.create-course-form textarea,
+.create-course-form select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  transition: border-color 0.3s ease;
+}
+
+.create-course-form input:focus,
+.create-course-form textarea:focus,
+.create-course-form select:focus {
+  border-color: #0056ff;
+  outline: none;
+}
+
+.create-course-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.submit-btn {
+  background: linear-gradient(90deg, #0056ff, #007bff);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.submit-btn:hover {
+  background: #003bbf;
+  transform: translateY(-2px);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .teacher-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .create-course-form {
+    padding: 1.5rem;
+    margin: 1rem auto;
+    max-width: 100%;
+  }
+
+  .create-course-form h2 {
+    font-size: 1.25rem;
+  }
+
+  .create-course-form input,
+  .create-course-form textarea,
+  .create-course-form select {
+    font-size: 14px;
+    padding: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .teacher-content {
+    padding: 1rem 0.75rem;
+  }
+
+  .create-course-form {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .create-course-form h2 {
+    font-size: 1.1rem;
+  }
+
+  .create-course-form p {
+    font-size: 0.85rem;
+  }
+
+  .create-course-form label {
+    font-size: 0.9rem;
+  }
+
+  .submit-btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}

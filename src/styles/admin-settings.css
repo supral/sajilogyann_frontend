@@ -1,0 +1,253 @@
+/* ================================
+   Admin Settings - Professional UI
+   File: src/styles/admin-settings.css
+================================ */
+
+.settings-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:14px;
+  }
+  
+  .settings-title{
+    font-size:28px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:.2px;
+  }
+  
+  .settings-subtitle{
+    margin:6px 0 0;
+    opacity:.75;
+    font-size:14px;
+    line-height:1.4;
+  }
+  
+  .settings-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  
+  .btn-primary,
+  .btn-outline{
+    border:none;
+    cursor:pointer;
+    font-weight:800;
+    border-radius:10px;
+    padding:10px 14px;
+    transition: transform .06s ease, opacity .2s ease, background .2s ease;
+  }
+  
+  .btn-primary{
+    background:#111;
+    color:#fff;
+  }
+  
+  .btn-outline{
+    background:#fff;
+    color:#111;
+    border:1px solid #ddd;
+  }
+  
+  .btn-primary:disabled,
+  .btn-outline:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+  }
+  
+  .btn-primary:active,
+  .btn-outline:active{
+    transform: translateY(1px);
+  }
+  
+  .settings-alert{
+    border-radius:12px;
+    padding:12px 14px;
+    margin:10px 0 16px;
+    font-size:14px;
+  }
+  
+  .settings-alert-error{
+    background:#ffecec;
+    border:1px solid #ffd2d2;
+    color:#8b0000;
+  }
+  
+  .settings-alert-success{
+    background:#eaffea;
+    border:1px solid #c9f5c9;
+    color:#0b6b0b;
+  }
+  
+  /* GRID */
+  .settings-grid{
+    display:grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap:14px;
+    margin-top:10px;
+  }
+  
+  .settings-card{
+    grid-column: span 6;
+    background:#fff;
+    border:1px solid #eee;
+    border-radius:16px;
+    padding:14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.04);
+  }
+  
+  .settings-card-wide{
+    grid-column: span 12;
+  }
+  
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  
+  .card-head h2{
+    margin:0;
+    font-size:18px;
+    font-weight:900;
+  }
+  
+  .chip{
+    background:#f4f4f4;
+    border:1px solid #e6e6e6;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:800;
+    color:#333;
+  }
+  
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-top:10px;
+  }
+  
+  .field label{
+    font-size:13px;
+    font-weight:800;
+    color:#222;
+  }
+  
+  .field input{
+    border:1px solid #e4e4e4;
+    background:#fff;
+    border-radius:12px;
+    padding:12px 12px;
+    outline:none;
+    font-size:14px;
+    transition: box-shadow .15s ease, border-color .15s ease;
+  }
+  
+  .field input:focus{
+    border-color:#111;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+  }
+  
+  .field input:disabled{
+    background:#fafafa;
+    opacity:.8;
+  }
+  
+  .two-col{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+  
+  .hint{
+    margin-top:10px;
+    font-size:13px;
+    opacity:.75;
+    line-height:1.4;
+  }
+  
+  .divider{
+    height:1px;
+    background:#eee;
+    margin:12px 0;
+  }
+  
+  /* Toggle rows */
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-top:10px;
+  }
+  
+  .toggle-title{
+    font-weight:900;
+    color:#111;
+  }
+  
+  .toggle-desc{
+    opacity:.75;
+    font-size:13px;
+    margin-top:3px;
+  }
+  
+  /* Switch */
+  .switch{
+    position:relative;
+    display:inline-block;
+    width:52px;
+    height:30px;
+  }
+  
+  .switch input{
+    opacity:0;
+    width:0;
+    height:0;
+  }
+  
+  .slider{
+    position:absolute;
+    cursor:pointer;
+    inset:0;
+    background:#dcdcdc;
+    transition:.2s;
+    border-radius:999px;
+  }
+  
+  .slider:before{
+    position:absolute;
+    content:"";
+    height:22px;
+    width:22px;
+    left:4px;
+    top:4px;
+    background:white;
+    transition:.2s;
+    border-radius:50%;
+    box-shadow:0 4px 10px rgba(0,0,0,.12);
+  }
+  
+  .switch input:checked + .slider{
+    background:#111;
+  }
+  
+  .switch input:checked + .slider:before{
+    transform: translateX(22px);
+  }
+  
+  /* Responsive */
+  @media (max-width: 1024px){
+    .settings-card{ grid-column: span 12; }
+    .two-col{ grid-template-columns: 1fr; }
+    .settings-header{ flex-direction:column; align-items:flex-start; }
+  }
+  

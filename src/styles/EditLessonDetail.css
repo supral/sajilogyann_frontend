@@ -1,0 +1,182 @@
+/* src/styles/EditLessonDetail.css */
+
+.edit-lesson-page {
+  background: transparent;
+}
+
+.edit-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.edit-topbar h2 {
+  margin: 0;
+}
+
+.edit-form {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.edit-form label {
+  display: block;
+  font-weight: 700;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.edit-form input,
+.edit-form textarea {
+  width: 100%;
+  border: 1px solid #e6e8ef;
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.edit-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.edit-error {
+  background: #ffe6e6;
+  border: 1px solid #ffb3b3;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.file-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .file-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mcq-edit h3,
+.case-edit h3 {
+  margin-top: 18px;
+  margin-bottom: 8px;
+}
+
+.mcq-box {
+  border: 1px solid #eef0f5;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+  background: #fafbff;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 700px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.add-btn {
+  margin-top: 10px;
+  border: 1px dashed #cbd5e1;
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.save-btn {
+  margin-top: 16px;
+  width: 100%;
+  border: none;
+  background: #111827;
+  color: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .edit-lesson-page {
+    padding: 16px;
+  }
+
+  .edit-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .edit-topbar h2 {
+    font-size: 20px;
+  }
+
+  .edit-form {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .edit-form label {
+    font-size: 13px;
+  }
+
+  .edit-form input,
+  .edit-form textarea {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .file-row {
+    grid-template-columns: 1fr;
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .save-btn {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-lesson-page {
+    padding: 12px;
+  }
+
+  .edit-topbar h2 {
+    font-size: 18px;
+  }
+
+  .edit-form {
+    padding: 12px;
+  }
+
+  .mcq-box {
+    padding: 10px;
+  }
+
+  .add-btn {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,270 @@
+.teacher-layout {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.teacher-body {
+  display: flex;
+  min-height: 100vh;
+  background: #f6f7fb;
+}
+
+.create-lesson-page {
+  flex: 1;
+  padding: 22px;
+}
+
+.cl-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.cl-header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.cl-sub {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.cl-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.cl-alert {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffe6e6;
+  border: 1px solid #ffb4b4;
+  margin-bottom: 14px;
+}
+
+.cl-form {
+  display: grid;
+  gap: 14px;
+}
+
+.cl-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.cl-card h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.cl-hint {
+  margin: 0 0 10px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.cl-card label {
+  display: block;
+  margin: 10px 0 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cl-card input[type="text"],
+.cl-card textarea,
+.cl-card input[type="file"] {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 14px;
+  background: #fff;
+}
+
+.cl-card textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.cl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cl-row-gap {
+  justify-content: flex-start;
+}
+
+.cl-filelist {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cl-fileitem {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.cl-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.cl-btn-small {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.cl-btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.cl-btn-ghost {
+  background: #eef2ff;
+  color: #1f2937;
+}
+
+.cl-btn-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.cl-footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 2px;
+}
+
+/* MCQ */
+.mcq-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.mcq-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.mcq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.mcq-header h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.mcq-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .mcq-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .create-lesson-page {
+    padding: 16px;
+  }
+
+  .cl-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .cl-header h2 {
+    font-size: 20px;
+  }
+
+  .cl-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .cl-card {
+    padding: 14px;
+  }
+
+  .cl-card h3 {
+    font-size: 16px;
+  }
+
+  .cl-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cl-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-lesson-page {
+    padding: 12px;
+  }
+
+  .cl-header h2 {
+    font-size: 18px;
+  }
+
+  .cl-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .cl-card input[type="text"],
+  .cl-card textarea,
+  .cl-card input[type="file"] {
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .cl-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .mcq-item {
+    padding: 10px;
+  }
+
+  .mcq-header h4 {
+    font-size: 14px;
+  }
+}
