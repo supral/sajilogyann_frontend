@@ -1,12 +1,16 @@
-import React from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-
 import LandingPage from "./pages/LandingPage";
-import PublicCourseDetail from "./pages/PublicCourseDetail";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import About from "./pages/about";
-
+import PublicCourseDetail from "./pages/PublicCourseDetail";
+import Courses from "./pages/Courses";
+import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import FAQ from "./pages/FAQ";
+import Academy from "./pages/Academy";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentProfile from "./pages/student/StudentProfile";
 import ChangePassword from "./pages/student/ChangePassword";
@@ -28,9 +32,6 @@ import Reports from "./pages/teacher/Reports";
 import CreateLesson from "./pages/teacher/CreateLesson";
 import LessonDetail from "./pages/teacher/LessonDetail";
 import EditLessonDetail from "./pages/teacher/EditLessonDetail";
-import EnrolledStudents from "./pages/teacher/EnrolledStudents";
-import McqAttempts from "./pages/teacher/McqAttempts";
-import TeacherAnalytics from "./pages/teacher/TeacherAnalytics";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageTeacher from "./pages/admin/ManageTeacher";
@@ -62,17 +63,88 @@ import MaintenanceWatcher from "./components/MaintenanceWatcher";
 // ✅ error pages
 import NotFound from "./pages/errors/NotFound";
 import Unauthorized from "./pages/errors/Unauthorized";
+import { useAppLogo } from "./hooks/useAppLogo.js";
+
+/** Sets document title from app settings (dynamic). */
+function DocumentTitle() {
+  const { appName } = useAppLogo();
+  React.useEffect(() => {
+    if (appName) document.title = `${appName} – Learn, Grow, Achieve`;
+  }, [appName]);
+  return null;
+}
+
+const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+
+/** If user has an active session (token + role), redirect to their dashboard; otherwise show landing.
+ * When maintenance is ON: only admin is redirected to dashboard; students/teachers see landing so landing stays visible to everyone. */
+function HomeOrRedirect() {
+  const token = localStorage.getItem("bs_token") || sessionStorage.getItem("bs_token");
+  const user = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("bs_user") || sessionStorage.getItem("bs_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const storedRole =
+    localStorage.getItem("bs_role") || sessionStorage.getItem("bs_role") ||
+    localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+  const role = (user?.role || storedRole || "").toString().trim().toLowerCase();
+
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const res = await fetch(`${API_HOST}/api/public/system-status`, { headers: { Accept: "application/json" } });
+        if (!res.ok) {
+          const alt = await fetch(`${API_HOST}/api/v1/public/system-status`, { headers: { Accept: "application/json" } });
+          if (alt.ok) {
+            const d = await alt.json();
+            if (!cancelled) setMaintenanceMode(!!d?.status?.maintenanceMode);
+          }
+          return;
+        }
+        const d = await res.json();
+        if (!cancelled) setMaintenanceMode(!!d?.status?.maintenanceMode);
+      } catch {
+        // keep false
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (token && role) {
+    if (maintenanceMode) {
+      if (role === "admin") return <Navigate to="/admin-dashboard" replace />;
+      return <LandingPage />;
+    }
+    if (role === "admin") return <Navigate to="/admin-dashboard" replace />;
+    if (role === "teacher") return <Navigate to="/teacher-dashboard" replace />;
+    return <Navigate to="/student-dashboard" replace />;
+  }
+  return <LandingPage />;
+}
 
 const App = () => {
   return (
     <Router>
-      {/* ✅ ALWAYS WATCH MAINTENANCE MODE */}
+      <DocumentTitle />
       <MaintenanceWatcher />
 
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<HomeOrRedirect />} />
         <Route path="/course/:id" element={<PublicCourseDetail />} />
         <Route path="/about" element={<About />} />
+        <Route path="/courses" element={<Courses />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/academy" element={<Academy />} />
 
         {/* ✅ Maintenance Page */}
         <Route path="/maintenance" element={<Maintenance />} />
@@ -119,7 +191,7 @@ const App = () => {
         <Route
           path="/change-password"
           element={
-            <ProtectedRoute allowRoles={["student"]}>
+            <ProtectedRoute allowRoles={["student", "teacher", "admin"]}>
               <ChangePassword />
             </ProtectedRoute>
           }

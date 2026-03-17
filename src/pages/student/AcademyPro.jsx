@@ -84,7 +84,7 @@ const AcademyPro = () => {
                 <ul className="pro-course-points">
                   <li>✔ Live doubt sessions & mentor feedback</li>
                   <li>✔ Real-world projects for your portfolio</li>
-                  <li>✔ Completion certificate with BlueSheep LMS</li>
+                  <li>✔ Completion certificate with Sajilogyaan LMS</li>
                 </ul>
 
                 {isProUser ? (

@@ -56,6 +56,10 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
     localStorage.removeItem("bs_user");
     sessionStorage.removeItem("bs_token");
     sessionStorage.removeItem("bs_user");
+    ["bs_role", "userRole", "role"].forEach((k) => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
     setOpen(false);
     setUserState(null);
     navigate("/", { replace: true });
@@ -146,8 +150,14 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, location.pathname]);
 
-  // ✅ Get app logo
-  const { logoUrl } = useAppLogo();
+  // ✅ Get app logo and name (dynamic from backend settings)
+  const { logoUrl, appName } = useAppLogo();
+  const logoFallbackText = useMemo(() => {
+    const s = String(appName || "S").trim();
+    const words = s.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return s.slice(0, 2).toUpperCase() || "SG";
+  }, [appName]);
 
   return (
     <header className="tnav">
@@ -169,8 +179,8 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
               alt="Logo"
               className="tnav__logo"
               style={{
-                width: "32px",
-                height: "32px",
+                width: "80px",
+                height: "80px",
                 objectFit: "contain",
                 borderRadius: "10px",
               }}
@@ -179,15 +189,14 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
                 if (!e.target.nextSibling) {
                   const textLogo = document.createElement("span");
                   textLogo.className = "tnav__logo";
-                  textLogo.textContent = "SG";
+                  textLogo.textContent = logoFallbackText;
                   e.target.parentNode.insertBefore(textLogo, e.target);
                 }
               }}
             />
           ) : (
-            <span className="tnav__logo">SG</span>
+            <span className="tnav__logo">{logoFallbackText}</span>
           )}
-          <span className="tnav__title">Sajilo Gyann</span>
         </Link>
       </div>
 

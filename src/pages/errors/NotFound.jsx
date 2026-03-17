@@ -1,6 +1,7 @@
 // src/pages/errors/NotFound.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 
 const NotFound = () => {
   const navigate = useNavigate();
@@ -44,16 +45,18 @@ const NotFound = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        padding: "20px",
-      }}
-    >
+    <>
+      <Navbar />
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          padding: "20px",
+        }}
+      >
       <div
         style={{
           background: "white",
@@ -196,6 +199,7 @@ const NotFound = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

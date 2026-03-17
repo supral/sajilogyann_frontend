@@ -5,7 +5,6 @@ import TeacherSidebar from "./TeacherSidebar";
 import NavbarAfterLogin from "./NavbarAfterLogin";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
-const API_PREFIXES = ["/api", "/api/v1"];
 
 const getToken = () =>
   localStorage.getItem("bs_token") || sessionStorage.getItem("bs_token");

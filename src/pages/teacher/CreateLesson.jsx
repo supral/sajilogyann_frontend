@@ -61,6 +61,7 @@ const CreateLesson = () => {
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // chapter info
   const [chapterName, setChapterName] = useState("");
@@ -187,8 +188,8 @@ const CreateLesson = () => {
       // POST /api/teacher/courses/:id/chapters
       await apiForm(`/teacher/courses/${id}/chapters`, { method: "POST", formData: fd });
 
-      alert("✅ Lesson/Chapter created successfully!");
-      
+      setShowSuccessDialog(true);
+
       // Reset form to allow creating another lesson
       setChapterName("");
       setDescription("");
@@ -212,6 +213,18 @@ const CreateLesson = () => {
 
   return (
     <div className="teacher-dashboard-layout">
+      {showSuccessDialog && (
+        <div className="cl-dialog-overlay" onClick={() => setShowSuccessDialog(false)} aria-hidden="true">
+          <div className="cl-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="cl-dialog-title">
+            <div className="cl-dialog-icon">✓</div>
+            <h3 id="cl-dialog-title" className="cl-dialog-title">Success</h3>
+            <p className="cl-dialog-message">Lesson/Chapter created successfully!</p>
+            <button type="button" className="cl-dialog-btn" onClick={() => setShowSuccessDialog(false)}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       <NavbarAfterLogin user={user} />
       <div className="teacher-body">
         <TeacherSidebar activeTab={activeTab} setActiveTab={setActiveTab} />

@@ -1,6 +1,7 @@
 // src/pages/errors/Unauthorized.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 
 const Unauthorized = () => {
   const navigate = useNavigate();
@@ -53,16 +54,18 @@ const Unauthorized = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f97316 0%, #dc2626 100%)",
-        padding: "20px",
-      }}
-    >
+    <>
+      <Navbar />
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #f97316 0%, #dc2626 100%)",
+          padding: "20px",
+        }}
+      >
       <div
         style={{
           background: "white",
@@ -235,6 +238,7 @@ const Unauthorized = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

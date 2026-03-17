@@ -85,6 +85,16 @@ export default function AdminSettings() {
     khaltiEnabled: false,
     khaltiPublicKey: "",
     khaltiSecretKey: "",
+
+    studentSelfEnrollmentEnabled: true,
+    studentMaxEnrolledCourses: 0,
+    studentProfileEditEnabled: true,
+    studentCertificateDownloadEnabled: true,
+
+    teacherCanCreateCourses: true,
+    teacherMaxCourses: 0,
+    teacherAnalyticsEnabled: true,
+    teacherCourseRequiresApproval: false,
   });
 
   const [logoPreview, setLogoPreview] = useState("");
@@ -126,6 +136,16 @@ export default function AdminSettings() {
           khaltiEnabled: !!data.settings.khaltiEnabled,
           khaltiPublicKey: data.settings.khaltiPublicKey || "",
           khaltiSecretKey: data.settings.khaltiSecretKey || "",
+
+          studentSelfEnrollmentEnabled: data.settings.studentSelfEnrollmentEnabled !== undefined ? !!data.settings.studentSelfEnrollmentEnabled : true,
+          studentMaxEnrolledCourses: Number(data.settings.studentMaxEnrolledCourses) || 0,
+          studentProfileEditEnabled: data.settings.studentProfileEditEnabled !== undefined ? !!data.settings.studentProfileEditEnabled : true,
+          studentCertificateDownloadEnabled: data.settings.studentCertificateDownloadEnabled !== undefined ? !!data.settings.studentCertificateDownloadEnabled : true,
+
+          teacherCanCreateCourses: data.settings.teacherCanCreateCourses !== undefined ? !!data.settings.teacherCanCreateCourses : true,
+          teacherMaxCourses: Number(data.settings.teacherMaxCourses) || 0,
+          teacherAnalyticsEnabled: data.settings.teacherAnalyticsEnabled !== undefined ? !!data.settings.teacherAnalyticsEnabled : true,
+          teacherCourseRequiresApproval: !!data.settings.teacherCourseRequiresApproval,
         };
         
         setForm(loadedSettings);
@@ -259,6 +279,16 @@ export default function AdminSettings() {
       formData.append("khaltiPublicKey", String(form.khaltiPublicKey || "").trim());
       formData.append("khaltiSecretKey", String(form.khaltiSecretKey || "").trim());
 
+      formData.append("studentSelfEnrollmentEnabled", !!form.studentSelfEnrollmentEnabled);
+      formData.append("studentMaxEnrolledCourses", clampNum(form.studentMaxEnrolledCourses, 0, 500));
+      formData.append("studentProfileEditEnabled", !!form.studentProfileEditEnabled);
+      formData.append("studentCertificateDownloadEnabled", !!form.studentCertificateDownloadEnabled);
+
+      formData.append("teacherCanCreateCourses", !!form.teacherCanCreateCourses);
+      formData.append("teacherMaxCourses", clampNum(form.teacherMaxCourses, 0, 500));
+      formData.append("teacherAnalyticsEnabled", !!form.teacherAnalyticsEnabled);
+      formData.append("teacherCourseRequiresApproval", !!form.teacherCourseRequiresApproval);
+
       // ✅ Add password if enabling maintenance mode (when password prompt is shown)
       if (showMaintenancePassword && maintenancePassword) {
         formData.append("maintenanceMode", true); // Ensure it's enabled
@@ -317,6 +347,16 @@ export default function AdminSettings() {
           khaltiEnabled: !!data.settings.khaltiEnabled,
           khaltiPublicKey: data.settings.khaltiPublicKey || "",
           khaltiSecretKey: data.settings.khaltiSecretKey || "",
+
+          studentSelfEnrollmentEnabled: data.settings.studentSelfEnrollmentEnabled !== undefined ? !!data.settings.studentSelfEnrollmentEnabled : true,
+          studentMaxEnrolledCourses: Number(data.settings.studentMaxEnrolledCourses) || 0,
+          studentProfileEditEnabled: data.settings.studentProfileEditEnabled !== undefined ? !!data.settings.studentProfileEditEnabled : true,
+          studentCertificateDownloadEnabled: data.settings.studentCertificateDownloadEnabled !== undefined ? !!data.settings.studentCertificateDownloadEnabled : true,
+
+          teacherCanCreateCourses: data.settings.teacherCanCreateCourses !== undefined ? !!data.settings.teacherCanCreateCourses : true,
+          teacherMaxCourses: Number(data.settings.teacherMaxCourses) || 0,
+          teacherAnalyticsEnabled: data.settings.teacherAnalyticsEnabled !== undefined ? !!data.settings.teacherAnalyticsEnabled : true,
+          teacherCourseRequiresApproval: !!data.settings.teacherCourseRequiresApproval,
         };
         
         setForm(savedSettings);
@@ -710,6 +750,156 @@ export default function AdminSettings() {
                   onChange={onChange}
                   disabled={loading || saving}
                 />
+              </div>
+            </section>
+
+            {/* STUDENT MANAGEMENT */}
+            <section className="settings-card">
+              <div className="card-head">
+                <h2>Student Management</h2>
+                <span className="chip">Learners</span>
+              </div>
+
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-title">Self-enrollment enabled</div>
+                  <div className="toggle-desc">Allow students to enroll in courses directly. If off, enrollment may require admin/teacher action.</div>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="studentSelfEnrollmentEnabled"
+                    checked={!!form.studentSelfEnrollmentEnabled}
+                    onChange={onChange}
+                    disabled={loading || saving}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
+
+              <div className="field" style={{ marginTop: 12 }}>
+                <label>Max enrolled courses per student</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="500"
+                  name="studentMaxEnrolledCourses"
+                  value={form.studentMaxEnrolledCourses ?? 0}
+                  onChange={onChange}
+                  disabled={loading || saving}
+                />
+                <div className="hint">0 = unlimited</div>
+              </div>
+
+              <div className="divider" />
+
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-title">Profile edit enabled</div>
+                  <div className="toggle-desc">Allow students to edit their profile (name, email, education, etc.).</div>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="studentProfileEditEnabled"
+                    checked={!!form.studentProfileEditEnabled}
+                    onChange={onChange}
+                    disabled={loading || saving}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
+
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-title">Certificate download enabled</div>
+                  <div className="toggle-desc">Allow students to download certificates for completed courses.</div>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="studentCertificateDownloadEnabled"
+                    checked={!!form.studentCertificateDownloadEnabled}
+                    onChange={onChange}
+                    disabled={loading || saving}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
+            </section>
+
+            {/* TEACHER / VENDOR MANAGEMENT */}
+            <section className="settings-card">
+              <div className="card-head">
+                <h2>Teacher / Vendor Management</h2>
+                <span className="chip">Instructors</span>
+              </div>
+
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-title">Teachers can create courses</div>
+                  <div className="toggle-desc">Allow teachers to create new courses. If off, only admin can create courses.</div>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="teacherCanCreateCourses"
+                    checked={!!form.teacherCanCreateCourses}
+                    onChange={onChange}
+                    disabled={loading || saving}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
+
+              <div className="field" style={{ marginTop: 12 }}>
+                <label>Max courses per teacher</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="500"
+                  name="teacherMaxCourses"
+                  value={form.teacherMaxCourses ?? 0}
+                  onChange={onChange}
+                  disabled={loading || saving}
+                />
+                <div className="hint">0 = unlimited</div>
+              </div>
+
+              <div className="divider" />
+
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-title">Analytics enabled</div>
+                  <div className="toggle-desc">Allow teachers to view analytics and enrolled students for their courses.</div>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="teacherAnalyticsEnabled"
+                    checked={!!form.teacherAnalyticsEnabled}
+                    onChange={onChange}
+                    disabled={loading || saving}
+                  />
+                  <span className="slider" />
+                </label>
+              </div>
+
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-title">Course requires approval</div>
+                  <div className="toggle-desc">When enabled, new teacher courses may require admin approval before going live (for future use).</div>
+                </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    name="teacherCourseRequiresApproval"
+                    checked={!!form.teacherCourseRequiresApproval}
+                    onChange={onChange}
+                    disabled={loading || saving}
+                  />
+                  <span className="slider" />
+                </label>
               </div>
             </section>
 

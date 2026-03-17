@@ -96,7 +96,7 @@ const StudentProfile = () => {
   const [profile, setProfile] = useState(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [marks, setMarks] = useState([]);
-  const [subscriptionHistory, setSubscriptionHistory] = useState([]);
+  const [, setSubscriptionHistory] = useState([]);
   const [recentMcqs, setRecentMcqs] = useState([]);
 
   // ✅ DB certificates
@@ -106,6 +106,23 @@ const StudentProfile = () => {
   const [activeCertKey, setActiveCertKey] = useState(null);
   const [downloadingKey, setDownloadingKey] = useState(null);
   const [issuingCourseKey, setIssuingCourseKey] = useState(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveErr, setProfileSaveErr] = useState("");
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    gender: "",
+    fatherName: "",
+    motherName: "",
+    dob: "",
+    department: "",
+    bio: "",
+    experience: "",
+  });
 
   const certRefs = useRef({});
   const didAutoIssueRef = useRef(false);
@@ -126,9 +143,6 @@ const StudentProfile = () => {
     return base;
   }, [authHeaders]);
 
-  // =========================
-  // ✅ LOAD PROFILE
-  // =========================
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -159,6 +173,18 @@ const StudentProfile = () => {
         const joinedOn = joinedRaw ? new Date(joinedRaw).toLocaleDateString() : "";
 
         setProfile(p ? { ...p, joinedOn } : null);
+        setEditForm({
+          name: p?.name ?? "",
+          phone: p?.phone ?? "",
+          address: p?.address ?? "",
+          gender: p?.gender ?? "",
+          fatherName: p?.fatherName ?? "",
+          motherName: p?.motherName ?? "",
+          dob: p?.dob ? (typeof p.dob === "string" ? p.dob.slice(0, 10) : new Date(p.dob).toISOString().slice(0, 10)) : "",
+          department: p?.department ?? "",
+          bio: p?.bio ?? "",
+          experience: p?.experience ?? "",
+        });
 
         setEnrolledCourses(Array.isArray(data?.enrolledCourses) ? data.enrolledCourses : []);
         setMarks(Array.isArray(data?.marks) ? data.marks : []);
@@ -176,16 +202,83 @@ const StudentProfile = () => {
     load();
   }, [authHeaders]);
 
-  const student = profile || {
-    name: "Student",
-    email: "",
-    program: "",
-    semester: "",
-    studentId: "",
-    joinedOn: "",
-    _id: "",
-    id: "",
+  const profileImageUrl = useMemo(() => {
+    const path = profile?.profileImage || "";
+    if (!path) return "";
+    if (/^https?:\/\//i.test(path)) return path;
+    return path.startsWith("/") ? `${API_HOST}${path}` : `${API_HOST}/${path}`;
+  }, [profile?.profileImage]);
+
+  const saveProfile = async () => {
+    if (!token) return;
+    setProfileSaveErr("");
+    setSavingProfile(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", (editForm.name || "").trim());
+      formData.append("phone", editForm.phone || "");
+      formData.append("address", editForm.address || "");
+      formData.append("gender", editForm.gender || "");
+      formData.append("fatherName", editForm.fatherName || "");
+      formData.append("motherName", editForm.motherName || "");
+      formData.append("dob", editForm.dob || "");
+      formData.append("department", editForm.department || "");
+      formData.append("bio", editForm.bio || "");
+      formData.append("experience", editForm.experience || "");
+      if (profileImageFile) formData.append("profileImage", profileImageFile);
+
+      const res = await fetch(`${API_HOST}/api/v1/students/me/profile`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await safeJson(res);
+      if (!res.ok) throw new Error(data?.message || "Failed to update profile");
+
+      const updated = data?.profile || data;
+      setProfile((prev) => (prev ? { ...prev, ...updated, joinedOn: prev.joinedOn } : { ...updated }));
+      setProfileImageFile(null);
+      setEditOpen(false);
+
+      const forStorage = {
+        ...(JSON.parse(localStorage.getItem("bs_user") || sessionStorage.getItem("bs_user") || "{}")),
+        name: updated.name,
+        email: updated.email,
+        profileImage: updated.profileImage || "",
+        phone: updated.phone,
+        address: updated.address,
+        gender: updated.gender,
+        fatherName: updated.fatherName,
+        motherName: updated.motherName,
+        dob: updated.dob,
+        department: updated.department,
+        bio: updated.bio,
+        experience: updated.experience,
+      };
+      if (localStorage.getItem("bs_token")) localStorage.setItem("bs_user", JSON.stringify(forStorage));
+      if (sessionStorage.getItem("bs_token")) sessionStorage.setItem("bs_user", JSON.stringify(forStorage));
+      window.dispatchEvent(new CustomEvent("bs-user-updated", { detail: forStorage }));
+    } catch (e) {
+      setProfileSaveErr(e?.message || "Failed to save profile");
+    } finally {
+      setSavingProfile(false);
+    }
   };
+
+  const student = useMemo(
+    () =>
+      profile || {
+        name: "Student",
+        email: "",
+        program: "",
+        semester: "",
+        studentId: "",
+        joinedOn: "",
+        _id: "",
+        id: "",
+      },
+    [profile]
+  );
 
   // ✅ show studentId if exists else fallback to _id (so ID never becomes blank)
   const displayId = useMemo(() => {
@@ -197,7 +290,6 @@ const StudentProfile = () => {
     );
   }, [student]);
 
-  // ✅ build meta line WITHOUT placeholders (removes your circled "— — · · ·")
   const metaLine = useMemo(() => {
     const program = cleanValue(student?.program);
     const semester = cleanValue(student?.semester);
@@ -205,9 +297,6 @@ const StudentProfile = () => {
     return [program, semester, idPart].filter(Boolean).join(" · ");
   }, [student, displayId]);
 
-  // =========================
-  // ✅ attempts map
-  // =========================
   const attemptCountMap = useMemo(() => {
     const map = new Map();
     for (const a of recentMcqs) {
@@ -219,9 +308,6 @@ const StudentProfile = () => {
     return map;
   }, [recentMcqs]);
 
-  // =========================
-  // ✅ progress table
-  // =========================
   const enrichedCourses = useMemo(() => {
     return enrolledCourses.map((c) => {
       const totalChapters = Number(c.totalChapters) > 0 ? Number(c.totalChapters) : null;
@@ -246,9 +332,6 @@ const StudentProfile = () => {
 
   const activeCount = enrichedCourses.filter((c) => c.status !== "Completed").length;
 
-  // =========================
-  // ✅ ID helpers
-  // =========================
   const resolveUserId = () =>
     student?._id || student?.id || profile?._id || profile?.id || "";
 
@@ -267,9 +350,6 @@ const StudentProfile = () => {
     return a?.chapterId || a?.lessonId || a?.chapter || a?.lesson || "";
   };
 
-  // =========================
-  // ✅ Normalize DB cert
-  // =========================
   const normalizeDbCert = (c) => {
     const courseId = oidOrNull(c?.courseId?._id || c?.courseId || "");
     const courseKey = courseId || String(c?._id || c?.certificateNo || Math.random());
@@ -301,9 +381,6 @@ const StudentProfile = () => {
     };
   };
 
-  // =========================
-  // ✅ Load DB certs
-  // =========================
   const loadDbCertificates = async () => {
     if (!token) return;
     setDbCertsLoading(true);
@@ -337,7 +414,7 @@ const StudentProfile = () => {
 
   useEffect(() => {
     loadDbCertificates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [token]);
 
   const dbByCourseId = useMemo(() => {
@@ -350,9 +427,6 @@ const StudentProfile = () => {
 
   const dbCourseIdSet = useMemo(() => new Set([...dbByCourseId.keys()]), [dbByCourseId]);
 
-  // =========================
-  // ✅ Local candidates (eligible by Total >= 50)
-  // =========================
   const localCandidates = useMemo(() => {
     const issuedAt = new Date().toISOString();
     const studentName = safeStr(student?.name, "Student");
@@ -404,11 +478,9 @@ const StudentProfile = () => {
         };
       })
       .filter((c) => c.passed && c.courseId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resolveChapterIdFromMarksOrAttempts, resolveUserId are stable
   }, [marks, student, profile, recentMcqs]);
 
-  // =========================
-  // ✅ Merge: DB wins, else candidate
-  // =========================
   const certificates = useMemo(() => {
     const merged = [];
 
@@ -431,9 +503,6 @@ const StudentProfile = () => {
     [certificates, activeCertKey]
   );
 
-  // =========================
-  // ✅ Issue cert to DB
-  // =========================
   const issueCertificateToDb = async (certCandidate) => {
     if (!token) {
       alert("Please login again (token missing).");
@@ -648,7 +717,11 @@ const StudentProfile = () => {
         {/* HEADER SECTION */}
         <section className="profile-header-card">
           <div className="profile-avatar">
-            <span>{(student.name || "S").charAt(0).toUpperCase()}</span>
+            {profileImageUrl ? (
+              <img src={profileImageUrl} alt="Profile" className="profile-avatar-img" />
+            ) : (
+              <span>{(student.name || "S").charAt(0).toUpperCase()}</span>
+            )}
           </div>
 
           <div className="profile-header-info">
@@ -672,13 +745,210 @@ const StudentProfile = () => {
                 {err}
               </p>
             ) : null}
+
+            <button
+              type="button"
+              className="profile-edit-btn"
+              onClick={() => setEditOpen((o) => !o)}
+              style={{ marginTop: 12 }}
+            >
+              {editOpen ? "Cancel" : "Edit profile & photo"}
+            </button>
           </div>
         </section>
+
+        {/* EDIT PROFILE SECTION */}
+        {editOpen && (
+          <section className="profile-card" style={{ marginBottom: 24 }}>
+            <div className="profile-card-header">
+              <h3>Personal information & profile photo</h3>
+            </div>
+            {profileSaveErr && (
+              <p className="sub-text" style={{ color: "crimson", marginBottom: 12 }}>{profileSaveErr}</p>
+            )}
+            <div className="profile-edit-grid">
+              <div className="profile-edit-avatar-wrap">
+                <label>Profile photo</label>
+                <div className="profile-edit-avatar">
+                  {(profileImageUrl || profileImageFile) ? (
+                    <img
+                      src={profileImageFile ? URL.createObjectURL(profileImageFile) : profileImageUrl}
+                      alt="Profile"
+                      className="profile-avatar-img"
+                    />
+                  ) : (
+                    <span>{(editForm.name || "S").charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && setProfileImageFile(e.target.files[0])}
+                  style={{ marginTop: 8, fontSize: 14 }}
+                />
+              </div>
+              <div className="profile-edit-fields">
+                <label>Full name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="Your name"
+                />
+                <label>Phone</label>
+                <input
+                  type="text"
+                  value={editForm.phone}
+                  onChange={(e) => setEditForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="Phone number"
+                />
+                <label>Address</label>
+                <input
+                  type="text"
+                  value={editForm.address}
+                  onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))}
+                  placeholder="Address"
+                />
+                <label>Gender</label>
+                <select
+                  value={editForm.gender}
+                  onChange={(e) => setEditForm((f) => ({ ...f, gender: e.target.value }))}
+                >
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+                <label>Father&apos;s name</label>
+                <input
+                  type="text"
+                  value={editForm.fatherName}
+                  onChange={(e) => setEditForm((f) => ({ ...f, fatherName: e.target.value }))}
+                  placeholder="Father's name"
+                />
+                <label>Mother&apos;s name</label>
+                <input
+                  type="text"
+                  value={editForm.motherName}
+                  onChange={(e) => setEditForm((f) => ({ ...f, motherName: e.target.value }))}
+                  placeholder="Mother's name"
+                />
+                <label>Date of birth</label>
+                <input
+                  type="date"
+                  value={editForm.dob}
+                  onChange={(e) => setEditForm((f) => ({ ...f, dob: e.target.value }))}
+                />
+                <label>Department / Program</label>
+                <input
+                  type="text"
+                  value={editForm.department}
+                  onChange={(e) => setEditForm((f) => ({ ...f, department: e.target.value }))}
+                  placeholder="Department or program"
+                />
+                <label>Bio</label>
+                <textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                  placeholder="Short bio"
+                  rows={3}
+                />
+                <label>Experience</label>
+                <input
+                  type="text"
+                  value={editForm.experience}
+                  onChange={(e) => setEditForm((f) => ({ ...f, experience: e.target.value }))}
+                  placeholder="Experience"
+                />
+                <button
+                  type="button"
+                  className="profile-save-btn"
+                  onClick={saveProfile}
+                  disabled={savingProfile}
+                >
+                  {savingProfile ? "Saving…" : "Save profile"}
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* MAIN GRID */}
         <section className="profile-main-grid">
           {/* LEFT */}
           <div className="profile-left-column">
+            {/* Personal information (read-only display) */}
+            <div className="profile-card">
+              <div className="profile-card-header">
+                <h3>Personal information</h3>
+              </div>
+              <div className="profile-info-grid">
+                {cleanValue(student?.phone) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Phone</span>
+                    <span className="profile-info-value">{student.phone}</span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.address) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Address</span>
+                    <span className="profile-info-value">{student.address}</span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.gender) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Gender</span>
+                    <span className="profile-info-value">{student.gender}</span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.fatherName) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Father&apos;s name</span>
+                    <span className="profile-info-value">{student.fatherName}</span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.motherName) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Mother&apos;s name</span>
+                    <span className="profile-info-value">{student.motherName}</span>
+                  </div>
+                ) : null}
+                {student?.dob ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Date of birth</span>
+                    <span className="profile-info-value">
+                      {typeof student.dob === "string"
+                        ? student.dob.slice(0, 10)
+                        : new Date(student.dob).toLocaleDateString()}
+                    </span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.department) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Department / Program</span>
+                    <span className="profile-info-value">{student.department}</span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.bio) ? (
+                  <div className="profile-info-row profile-info-row--full">
+                    <span className="profile-info-label">Bio</span>
+                    <span className="profile-info-value">{student.bio}</span>
+                  </div>
+                ) : null}
+                {cleanValue(student?.experience) ? (
+                  <div className="profile-info-row">
+                    <span className="profile-info-label">Experience</span>
+                    <span className="profile-info-value">{student.experience}</span>
+                  </div>
+                ) : null}
+                {!loading && !cleanValue(student?.phone) && !cleanValue(student?.address) && !cleanValue(student?.gender) &&
+                 !cleanValue(student?.fatherName) && !cleanValue(student?.motherName) && !student?.dob &&
+                 !cleanValue(student?.department) && !cleanValue(student?.bio) && !cleanValue(student?.experience) ? (
+                  <p className="sub-text">No personal information added yet. Click &quot;Edit profile & photo&quot; above to add details.</p>
+                ) : null}
+              </div>
+            </div>
+
             <div className="profile-card">
               <div className="profile-card-header">
                 <h3>Enrolled Courses</h3>

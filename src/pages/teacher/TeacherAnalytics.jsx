@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -29,7 +28,6 @@ import {
 } from "../../services/api";
 
 const TeacherAnalytics = () => {
-  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);

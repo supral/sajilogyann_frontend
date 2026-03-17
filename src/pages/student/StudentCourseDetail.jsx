@@ -174,10 +174,6 @@ export default function StudentCourseDetail() {
 
           setLessons(list);
 
-          // ✅ FIX: pick first id from _id OR lessonId OR chapterId
-          const firstId =
-            list?.[0]?._id || list?.[0]?.lessonId || list?.[0]?.chapterId || "";
-
           // Don't auto-select first lesson - user must click
           // if (!activeLessonId && firstId) setActiveLessonId(String(firstId));
 
@@ -343,6 +339,7 @@ export default function StudentCourseDetail() {
     }
     
     return files;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- materials/notesFiles/taskFiles derived from content
   }, [videoFile, materials, notesFiles, taskFiles, caseStudyFile]);
 
   // Get current content to display - MUST be defined before useEffects that use it
@@ -352,7 +349,7 @@ export default function StudentCourseDetail() {
     return allFiles[currentContentIndex];
   }, [allFiles, currentContentIndex]);
 
-  const openFileViewer = (fileMeta, type = "materials", idx = 0) => {
+  const _openFileViewer = (fileMeta, type = "materials", idx = 0) => {
     const normalized = normalizeFileMeta(fileMeta);
     if (!normalized?.url) {
       alert("No file uploaded for this item.");
@@ -521,14 +518,16 @@ export default function StudentCourseDetail() {
         });
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when URL changes
   }, [currentContent?.url]);
 
   // Error detection for Office viewer with timeout
   const officeViewerTimeoutRef = useRef({});
   useEffect(() => {
+    const timeoutRef = officeViewerTimeoutRef.current;
     if (currentContent?.url && guessFileType(currentContent) === "office" && !officeViewerError[currentContent.url]) {
       // Set timeout to detect if viewer fails
-      officeViewerTimeoutRef.current[currentContent.url] = setTimeout(() => {
+      timeoutRef[currentContent.url] = setTimeout(() => {
         // If viewer hasn't shown error after 5 seconds, check if it's actually working
         // For localhost, we already marked it as error, so this is for public URLs
         if (isPublicUrl(currentContent.url) && !officeViewerError[currentContent.url]) {
@@ -558,12 +557,12 @@ export default function StudentCourseDetail() {
     }
     
     return () => {
-      // Cleanup timeout when content changes
-      if (currentContent?.url && officeViewerTimeoutRef.current[currentContent.url]) {
-        clearTimeout(officeViewerTimeoutRef.current[currentContent.url]);
-        delete officeViewerTimeoutRef.current[currentContent.url];
+      if (currentContent?.url && timeoutRef[currentContent.url]) {
+        clearTimeout(timeoutRef[currentContent.url]);
+        delete timeoutRef[currentContent.url];
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional deps; ref captured above
   }, [currentContent?.url, officeViewerError, useGoogleViewer]);
 
   const startMCQTest = () => {
@@ -602,6 +601,7 @@ export default function StudentCourseDetail() {
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on mount; fetchCourse stable
   }, [id, loading]);
 
   const guessFileType = (file) => {

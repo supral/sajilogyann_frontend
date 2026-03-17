@@ -1,7 +1,9 @@
 .sfv-page {
-    max-width: 1100px;
-    margin: 24px auto 50px;
+    width: 100%;
+    max-width: 100%;
+    margin: 24px 0 50px;
     padding: 0 16px;
+    box-sizing: border-box;
   }
   
   .sfv-top {

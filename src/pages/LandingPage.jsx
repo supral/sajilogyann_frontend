@@ -109,12 +109,13 @@ const LandingPage = () => {
     }, observerOptions);
 
     // Observe all sections
-    Object.values(sectionRefs.current).forEach((ref) => {
+    const refs = sectionRefs.current;
+    Object.values(refs).forEach((ref) => {
       if (ref) observer.observe(ref);
     });
 
     return () => {
-      Object.values(sectionRefs.current).forEach((ref) => {
+      Object.values(refs).forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };

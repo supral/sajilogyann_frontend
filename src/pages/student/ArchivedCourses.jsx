@@ -144,6 +144,7 @@ export default function StudentArchivedCourses() {
 
   useEffect(() => {
     fetchArchivedCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   const handleRefresh = () => {
@@ -368,7 +369,6 @@ export default function StudentArchivedCourses() {
           }}
         >
           {courses.map((course) => {
-            const progressPercent = course.progress?.progressPercent || course.progress?.progress || 100;
             const isUnarchiving = unarchivingId === course.id;
 
             return (

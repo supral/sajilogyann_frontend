@@ -14,7 +14,6 @@
     box-sizing: border-box;
     margin: 0;
     margin-bottom: 0;
-  
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -28,6 +27,11 @@
     gap: 16px;
     min-width: 0;
     flex-shrink: 0;
+  }
+
+  .tnav__browseWrap {
+    position: relative;
+    margin-left: 24px;
   }
 
   /* Hamburger Menu Button */
@@ -66,22 +70,23 @@
   }
   
   .tnav__logo {
-    width: 32px;
-    height: 32px;
+    width: 80px;
+    height: 80px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0056ff, #007bff);
-    color: #fff;
+    background: transparent;
+    color: #0f172a;
     font-weight: 900;
-    font-size: 12px;
-    box-shadow: 0 8px 16px rgba(0, 86, 255, 0.18);
+    font-size: 15px;
     flex: 0 0 auto;
+    overflow: hidden;
+    object-fit: contain;
   }
   
   .tnav__title {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
   }
   
@@ -91,7 +96,7 @@
     min-width: 0;
     color: #0f172a;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 15px;
     opacity: 0.95;
     padding: 0 10px;
   }
@@ -132,7 +137,7 @@
   .tnav__btn {
     text-decoration: none;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 15px;
     padding: 10px 16px;
     border-radius: 12px;
     transition: all 0.2s ease;
@@ -160,7 +165,7 @@
   }
 
   .tnav__btn--ghost i {
-    font-size: 14px;
+    font-size: 16px;
   }
   
   .tnav__btn--primary {
@@ -227,9 +232,134 @@
   }
 
   .tnav__btn--browse i.fa-compass {
-    font-size: 14px;
+    font-size: 16px;
   }
   
+  /* Notifications bell (left of profile) */
+  .tnav__notifWrap {
+    position: relative;
+  }
+
+  .tnav__iconBtn--bell {
+    padding: 8px 10px;
+  }
+
+  .tnav__iconBtn--bell i {
+    font-size: 18px;
+    color: #0f172a;
+  }
+
+  .tnav__notifBadge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: #ef4444;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tnav__notifDropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 360px;
+    max-width: calc(100vw - 24px);
+    max-height: 420px;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .tnav__notifHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    flex-shrink: 0;
+  }
+
+  .tnav__notifHeader h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .tnav__notifMarkAll {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2563eb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+  }
+
+  .tnav__notifMarkAll:hover {
+    background: rgba(37, 99, 235, 0.1);
+  }
+
+  .tnav__notifList {
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .tnav__notifEmpty {
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  .tnav__notifItem {
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    transition: background 0.15s ease;
+    cursor: pointer;
+  }
+
+  .tnav__notifItem:hover {
+    background: rgba(15, 23, 42, 0.05);
+  }
+
+  .tnav__notifItem:last-child {
+    margin-bottom: 0;
+  }
+
+  .tnav__notifItem--unread {
+    background: rgba(37, 99, 235, 0.06);
+  }
+
+  .tnav__notifItem .tnav__notifMessage {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #0f172a;
+  }
+
+  .tnav__notifTime {
+    font-size: 11px;
+    color: #64748b;
+  }
+
   /* Profile Dropdown */
   .tnav__profile {
     position: relative;
@@ -282,7 +412,7 @@
   /* Initials fallback */
   .tnav__initials {
     font-weight: 900;
-    font-size: 12px;
+    font-size: 14px;
     letter-spacing: 0.5px;
     user-select: none;
   }
@@ -370,7 +500,7 @@
     gap: 10px;
     padding: 12px 14px;
     font-weight: 900;
-    font-size: 14px;
+    font-size: 16px;
     color: #0f172a;
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
     border-radius: 12px;
@@ -419,7 +549,7 @@
     text-align: left;
     color: #0f172a;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 15px;
     transition: all 0.2s ease;
   }
 
@@ -432,7 +562,7 @@
     width: 18px;
     text-align: center;
     color: #667eea;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .tnav__menuBtn--primary {
@@ -455,7 +585,7 @@
     align-items: center;
     gap: 10px;
     padding: 20px;
-    font-size: 13px;
+    font-size: 15px;
     color: #64748b;
     justify-content: center;
   }
@@ -472,7 +602,7 @@
     padding: 24px 16px;
     text-align: center;
     color: #64748b;
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .tnav__menuEmpty i {
@@ -513,7 +643,7 @@
     text-decoration: none;
     color: #0f172a;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 15px;
     transition: all 0.15s ease;
   }
 
@@ -526,7 +656,7 @@
   .tnav__menuItem i {
     width: 18px;
     text-align: center;
-    font-size: 14px;
+    font-size: 15px;
     color: #64748b;
   }
 
@@ -636,7 +766,7 @@
     }
   
     .tnav__center {
-      font-size: 12px;
+      font-size: 14px;
       padding: 0 8px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -647,8 +777,8 @@
     }
 
     .tnav__logo {
-      width: 32px;
-      height: 32px;
+      width: 64px;
+      height: 64px;
       font-size: 12px;
     }
 
@@ -736,12 +866,12 @@
 
     .tnav__btn--primary {
       padding: 8px 14px;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     .tnav__logo {
-      width: 28px;
-      height: 28px;
+      width: 52px;
+      height: 52px;
       font-size: 11px;
     }
   }

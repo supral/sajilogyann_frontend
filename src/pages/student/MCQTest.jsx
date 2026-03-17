@@ -65,6 +65,8 @@ export default function MCQTest() {
   const [courseTitle, setCourseTitle] = useState(initialCourseTitle);
   const [lessonTitle, setLessonTitle] = useState(initialLessonTitle);
 
+  const [loadingPassCheck, setLoadingPassCheck] = useState(true);
+  const [alreadyPassed, setAlreadyPassed] = useState(false);
   const [loadingMcq, setLoadingMcq] = useState(false);
   const [mcqErr, setMcqErr] = useState("");
   const [mcqs, setMcqs] = useState([]);
@@ -95,6 +97,25 @@ export default function MCQTest() {
     const mm = String(Math.floor(s / 60)).padStart(2, "0");
     const ss = String(s % 60).padStart(2, "0"); // ✅ FIXED
     return `${mm}:${ss}`;
+  };
+
+  // Check if student already passed this chapter's MCQ (block re-attempt)
+  const fetchMcqStatus = async () => {
+    for (const prefix of API_PREFIXES) {
+      const url = `${API_HOST}${prefix}/students/courses/${courseId}/chapters/${lessonId}/mcq-status`;
+      try {
+        const res = await fetch(url, { headers: { Accept: "application/json", ...authHeader } });
+        const data = await safeJson(res);
+        if (res.ok && data?.alreadyPassed === true) {
+          setAlreadyPassed(true);
+          return true;
+        }
+        if (res.ok) return false;
+      } catch {
+        // try next prefix
+      }
+    }
+    return false;
   };
 
   // ✅ fallback: load MCQs from public course endpoint if lesson not found in lessonsWithProgress
@@ -226,9 +247,19 @@ export default function MCQTest() {
   useEffect(() => {
     if (!courseId || !lessonId) {
       setMcqErr("Missing courseId/lessonId.");
+      setLoadingPassCheck(false);
       return;
     }
-    fetchMcqs();
+    let cancelled = false;
+    const run = async () => {
+      const passed = await fetchMcqStatus();
+      if (cancelled) return;
+      setLoadingPassCheck(false);
+      if (passed) return;
+      fetchMcqs();
+    };
+    run();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, lessonId]);
 
@@ -344,6 +375,11 @@ export default function MCQTest() {
         return;
       }
       if (res.status === 403) {
+        if (res.data?.code === "ALREADY_PASSED") {
+          setAlreadyPassed(true);
+          setSaveStatus("idle");
+          return;
+        }
         alert(res.data?.message || "Complete previous lesson first.");
         navigate(`/student/courses/${courseId}`, { replace: true });
         return;
@@ -422,7 +458,30 @@ export default function MCQTest() {
         </div>
 
         <div className="sfv-card">
-          {loadingMcq ? (
+          {loadingPassCheck ? (
+            <div className="sfv-loading">Checking…</div>
+          ) : alreadyPassed ? (
+            <div className="sfv-errorBox" style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+              <h2 style={{ color: "#166534", marginBottom: "0.5rem" }}>You already passed the exam</h2>
+              <div className="sfv-muted" style={{ color: "#15803d", marginBottom: "1rem" }}>
+                You have already attempted and passed the MCQ for this lesson. You can continue to view course materials.
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                <button
+                  className="sfv-btn sfv-btn-primary"
+                  onClick={() => navigate(`/student/courses/${courseId}/lessons/${lessonId}`, { replace: true })}
+                >
+                  Open course material
+                </button>
+                <button
+                  className="sfv-btn"
+                  onClick={() => navigate(`/student/courses/${courseId}`, { replace: true })}
+                >
+                  Back to course
+                </button>
+              </div>
+            </div>
+          ) : loadingMcq ? (
             <div className="sfv-loading">Loading MCQs…</div>
           ) : mcqErr ? (
             <div className="sfv-errorBox">

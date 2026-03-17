@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function Maintenance() {
   return (
@@ -29,7 +30,8 @@ export default function Maintenance() {
           background: "#f1f5ff",
           border: "1px solid #dbe5ff"
         }}>
-          <b>Tip:</b> If you are an admin, open Admin Dashboard.
+          <b>Admin?</b> You can still sign in and use the admin dashboard.{" "}
+          <Link to="/login" style={{ fontWeight: 600, color: "#2563eb" }}>Go to Login</Link>
         </div>
       </div>
     </div>

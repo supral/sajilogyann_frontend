@@ -3,7 +3,6 @@ import StudentPageLayout from "./StudentPageLayout";
 import { useNavigate } from "react-router-dom";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
-const API_PREFIXES = ["/api/v1", "/api"];
 const ENROLLED_COURSES_ENDPOINTS = [
   "/api/v1/students/enrolled-courses",
   "/api/students/enrolled-courses"
@@ -150,6 +149,7 @@ export default function EnrolledCourses() {
 
   useEffect(() => {
     fetchCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   const handleRefresh = () => {

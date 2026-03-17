@@ -23,6 +23,11 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+
   const [browseOpen, setBrowseOpen] = useState(false);
   const browseRef = useRef(null);
   const [categories, setCategories] = useState([]);
@@ -32,7 +37,7 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
     localStorage.getItem("bs_token") ||
     sessionStorage.getItem("bs_token");
 
-  const user = useMemo(() => {
+  const storageUser = useMemo(() => {
     if (userProp) return userProp;
     try {
       const raw =
@@ -42,7 +47,18 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
     } catch {
       return null;
     }
-  }, [userProp, token]);
+  }, [userProp]);
+
+  const [updatedUser, setUpdatedUser] = useState(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail && typeof e.detail === "object") setUpdatedUser(e.detail);
+    };
+    window.addEventListener("bs-user-updated", handler);
+    return () => window.removeEventListener("bs-user-updated", handler);
+  }, []);
+
+  const user = updatedUser || storageUser;
 
   const displayName = user?.name || user?.fullName || "Student";
 
@@ -61,14 +77,24 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
     return (a + b).toUpperCase();
   }, [displayName]);
 
-  // ✅ Get app logo
-  const { logoUrl } = useAppLogo();
+  // ✅ Get app logo and name (dynamic from backend settings)
+  const { logoUrl, appName } = useAppLogo();
+  const logoFallbackText = useMemo(() => {
+    const s = String(appName || "S").trim();
+    const words = s.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return s.slice(0, 2).toUpperCase() || "SG";
+  }, [appName]);
 
   const logout = () => {
     localStorage.removeItem("bs_token");
     localStorage.removeItem("bs_user");
     sessionStorage.removeItem("bs_token");
     sessionStorage.removeItem("bs_user");
+    ["bs_role", "userRole", "role"].forEach((k) => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
     setProfileOpen(false);
     setBrowseOpen(false);
     navigate("/", { replace: true });
@@ -77,14 +103,24 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
   // close menus on route change
   useEffect(() => {
     setProfileOpen(false);
+    setNotificationsOpen(false);
     setBrowseOpen(false);
   }, [location.pathname]);
+
+  // Fetch notifications on mount so bell badge shows unread count
+  useEffect(() => {
+    if (token) fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run when token is set, not when fetchNotifications identity changes
+  }, [token]);
 
   // close menus on outside click
   useEffect(() => {
     const handler = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target)) {
+        setNotificationsOpen(false);
       }
       if (browseRef.current && !browseRef.current.contains(e.target)) {
         setBrowseOpen(false);
@@ -192,6 +228,86 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
     }
   };
 
+  const fetchNotifications = async () => {
+    if (!token) return;
+    setNotifLoading(true);
+    try {
+      for (const prefix of API_PREFIXES) {
+        const res = await fetch(`${API_HOST}${prefix}/notifications`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (res.ok) {
+          const data = await safeJson(res);
+          const list = Array.isArray(data) ? data : (data?.notifications ?? []);
+          setNotifications(list);
+          break;
+        }
+      }
+    } catch (e) {
+      console.error("Fetch notifications error:", e);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!token) return;
+    try {
+      for (const prefix of API_PREFIXES) {
+        const res = await fetch(`${API_HOST}${prefix}/notifications/read-all`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (res.ok) {
+          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+          break;
+        }
+      }
+    } catch (e) {
+      console.error("Mark all read error:", e);
+    }
+  };
+
+  const markOneAsRead = async (id) => {
+    if (!token || !id) return;
+    try {
+      for (const prefix of API_PREFIXES) {
+        const res = await fetch(`${API_HOST}${prefix}/notifications/${id}/read`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        });
+        if (res.ok) {
+          setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
+          break;
+        }
+      }
+    } catch (e) {
+      console.error("Mark notification read error:", e);
+    }
+  };
+
+  const getNotificationRoute = (n) => {
+    if (!n) return "/student-dashboard";
+    const type = (n.type || "").toLowerCase();
+    const relatedType = (n.relatedType || "").toLowerCase();
+    const relatedId = n.relatedId ? String(n.relatedId) : null;
+    if (type === "certificate") return "/student/certificates";
+    if (type === "enrollment" && relatedId) return `/student/course/${relatedId}`;
+    if (type === "enrollment") return "/student/enrolled-courses";
+    if (type === "lesson" && relatedType === "course" && relatedId) return `/student/course/${relatedId}`;
+    if (type === "lesson") return "/student/enrolled-courses";
+    if (type === "assignment") return "/student/assignments";
+    if (type === "quiz") return "/student/practice-quizzes";
+    return "/student-dashboard";
+  };
+
+  const onNotificationClick = (n) => {
+    if (!n?._id) return;
+    if (!n.read) markOneAsRead(n._id);
+    setNotificationsOpen(false);
+    navigate(getNotificationRoute(n));
+  };
+
   const onPickCategory = (cat) => {
     setBrowseOpen(false);
     navigate(`/student-dashboard?category=${encodeURIComponent(cat)}`);
@@ -221,8 +337,8 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
               alt="Logo"
               className="tnav__logo"
               style={{
-                width: "32px",
-                height: "32px",
+                width: "80px",
+                height: "80px",
                 objectFit: "contain",
                 borderRadius: "10px",
               }}
@@ -231,19 +347,18 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
                 if (!e.target.nextSibling) {
                   const textLogo = document.createElement("span");
                   textLogo.className = "tnav__logo";
-                  textLogo.textContent = "SG";
+                  textLogo.textContent = logoFallbackText;
                   e.target.parentNode.insertBefore(textLogo, e.target);
                 }
               }}
             />
           ) : (
-            <span className="tnav__logo">SG</span>
+            <span className="tnav__logo">{logoFallbackText}</span>
           )}
-          <span className="tnav__title">Sajilo Gyann</span>
         </div>
 
         {/* Browse */}
-        <div ref={browseRef} style={{ position: "relative" }}>
+        <div ref={browseRef} className="tnav__browseWrap">
           <button
             type="button"
             className={`tnav__btn tnav__btn--browse ${browseOpen ? "active" : ""} ${
@@ -328,6 +443,74 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
           <span>How to Get Certificates</span>
         </button>
 
+        <div className="tnav__notifWrap" ref={notificationsRef}>
+          <button
+            type="button"
+            className="tnav__iconBtn tnav__iconBtn--bell"
+            onClick={() => {
+              setNotificationsOpen((v) => !v);
+              if (!notificationsOpen) fetchNotifications();
+            }}
+            aria-label="Notifications"
+            aria-expanded={notificationsOpen}
+          >
+            <i className="fa-solid fa-bell" />
+            {notifications.some((n) => !n.read) ? (
+              <span className="tnav__notifBadge" aria-hidden="true">
+                {notifications.filter((n) => !n.read).length > 99 ? "99+" : notifications.filter((n) => !n.read).length}
+              </span>
+            ) : null}
+          </button>
+          {notificationsOpen && (
+            <div className="tnav__notifDropdown">
+              <div className="tnav__notifHeader">
+                <h4>Notifications</h4>
+                {notifications.some((n) => !n.read) ? (
+                  <button type="button" className="tnav__notifMarkAll" onClick={markAllAsRead}>
+                    Mark all as read
+                  </button>
+                ) : null}
+              </div>
+              <div className="tnav__notifList">
+                {notifLoading ? (
+                  <p className="tnav__notifEmpty">Loading…</p>
+                ) : notifications.length === 0 ? (
+                  <p className="tnav__notifEmpty">No notifications yet.</p>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n._id}
+                      role="button"
+                      tabIndex={0}
+                      className={`tnav__notifItem ${n.read ? "" : "tnav__notifItem--unread"}`}
+                      onClick={() => onNotificationClick(n)}
+                      onKeyDown={(e) => e.key === "Enter" && onNotificationClick(n)}
+                    >
+                      <p className="tnav__notifMessage">{n.message}</p>
+                      <span className="tnav__notifTime">
+                        {n.createdAt
+                          ? (() => {
+                              const d = new Date(n.createdAt);
+                              const now = new Date();
+                              const diffMins = Math.floor((now - d) / 60000);
+                              const diffHours = Math.floor((now - d) / 3600000);
+                              const diffDays = Math.floor((now - d) / 86400000);
+                              if (diffMins < 1) return "Just now";
+                              if (diffMins < 60) return `${diffMins}m ago`;
+                              if (diffHours < 24) return `${diffHours}h ago`;
+                              if (diffDays < 7) return `${diffDays}d ago`;
+                              return d.toLocaleDateString();
+                            })()
+                          : ""}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="tnav__profile" ref={profileRef}>
           <button
             type="button"
@@ -355,6 +538,10 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
 
               <Link to="/student/profile" onClick={() => setProfileOpen(false)}>
                 <span className="tnav__mi">👤</span> View Profile
+              </Link>
+
+              <Link to="/change-password" onClick={() => setProfileOpen(false)}>
+                <i className="fa-solid fa-lock tnav__mi" /> Change Password
               </Link>
 
               <div className="tnav__divider" />

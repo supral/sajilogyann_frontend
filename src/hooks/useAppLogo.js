@@ -1,4 +1,4 @@
-// bluesheep/src/hooks/useAppLogo.js
+// sajilogyaan/src/hooks/useAppLogo.js
 import { useState, useEffect } from "react";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
@@ -32,31 +32,39 @@ const apiFetchCandidates = async (paths, options = {}) => {
   );
 };
 
+const DEFAULT_APP_NAME = "Sajilogyaan";
+/** Fallback logo when backend does not provide one (public asset) */
+const DEFAULT_LOGO_PATH = "/logo/sglogo.png";
+
 /**
- * Custom hook to fetch and cache app logo from settings
+ * Fetches public app settings (logo, appName, supportEmail) from system-status.
+ * Use for dynamic branding across navbars, footer, and pages.
  */
 export const useAppLogo = () => {
   const [logoUrl, setLogoUrl] = useState("");
+  const [appName, setAppName] = useState(DEFAULT_APP_NAME);
+  const [supportEmail, setSupportEmail] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadLogo = async () => {
+    const load = async () => {
       try {
-        // Try to get from public system status endpoint
         const { data } = await apiFetchCandidates(["/public/system-status"], {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
 
-        // If logo is in public status, use it
-        if (data?.settings?.logo) {
-          const logo = data.settings.logo;
-          const fullUrl = logo.startsWith("http") 
-            ? logo 
-            : `${API_HOST}${logo}`;
-          setLogoUrl(fullUrl);
-        } else {
-          // Otherwise try to get full settings (admin only)
+        if (data?.settings) {
+          if (data.settings.appName) setAppName(data.settings.appName);
+          if (data.settings.supportEmail) setSupportEmail(data.settings.supportEmail);
+          if (data.settings.logo) {
+            const logo = data.settings.logo;
+            setLogoUrl(logo.startsWith("http") ? logo : `${API_HOST}${logo}`);
+          }
+        }
+        if (data?.status?.appName && !data?.settings?.appName) setAppName(data.status.appName);
+
+        if (!data?.settings?.logo) {
           const token = localStorage.getItem("bs_token") || sessionStorage.getItem("bs_token");
           if (token) {
             try {
@@ -67,28 +75,26 @@ export const useAppLogo = () => {
                   Authorization: `Bearer ${token}`,
                 },
               });
-
               if (settingsData?.settings?.logo) {
                 const logo = settingsData.settings.logo;
-                const fullUrl = logo.startsWith("http") 
-                  ? logo 
-                  : `${API_HOST}${logo}`;
-                setLogoUrl(fullUrl);
+                setLogoUrl(logo.startsWith("http") ? logo : `${API_HOST}${logo}`);
               }
+              if (settingsData?.settings?.appName) setAppName(settingsData.settings.appName);
+              if (settingsData?.settings?.supportEmail) setSupportEmail(settingsData.settings.supportEmail || "");
             } catch {
-              // Non-admin users will just not get logo
+              // ignore
             }
           }
         }
       } catch (error) {
-        console.warn("Failed to load app logo:", error);
+        console.warn("Failed to load app settings:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadLogo();
+    load();
   }, []);
 
-  return { logoUrl, loading };
+  return { logoUrl: logoUrl || DEFAULT_LOGO_PATH, appName, supportEmail, loading };
 };

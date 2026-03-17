@@ -310,20 +310,21 @@ const AdminDashboard = () => {
           >
             <div>
               <h1 className="page-title">Admin Dashboard</h1>
-              <div style={{ opacity: 0.75 }}>
-                {loading
-                  ? "Loading dashboard..."
-                  : "Live stats loaded from database."}
-              </div>
+              <p className="page-subtitle">
+                {loading ? "Loading dashboard…" : "Live stats from database. Use the menu to manage users, teachers, courses, and settings."}
+              </p>
             </div>
 
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="dashboard-header-actions">
               <button
+                type="button"
                 className="update-btn"
                 onClick={refreshAll}
                 disabled={loading || loadingReport}
+                aria-label="Refresh dashboard data"
               >
-                ↻ Refresh
+                <i className="fa-solid fa-rotate-right" aria-hidden />
+                <span>Refresh</span>
               </button>
             </div>
           </div>
@@ -355,173 +356,153 @@ const AdminDashboard = () => {
             </div>
           ) : null}
 
-          {/* DASHBOARD STATS CARDS */}
-          <div className="dashboard-overview" style={{ marginTop: 14 }}>
-            <div className="stat-card">
-              👩‍🎓 Total Students: <b>{stats.studentsCount}</b>
-              <div style={{ marginTop: 10 }}>
-                <button
-                  className="edit-btn"
-                  onClick={() => navigate("/admin/users")}
-                >
+          {/* OVERVIEW SECTION */}
+          <section className="dashboard-section" aria-labelledby="overview-heading">
+            <h2 id="overview-heading" className="dashboard-section-title">Overview</h2>
+            <div className="dashboard-overview">
+              <div className="stat-card">
+                <span className="stat-card-icon" aria-hidden>👩‍🎓</span>
+                <span className="stat-card-label">Total Students</span>
+                <span className="stat-card-value">{stats.studentsCount}</span>
+                <button type="button" className="edit-btn stat-card-btn" onClick={() => navigate("/admin/users")}>
                   Manage Users
                 </button>
               </div>
-            </div>
-
-            <div className="stat-card">
-              👨‍🏫 Total Teachers: <b>{stats.teachersCount}</b>
-              <div style={{ marginTop: 10 }}>
-                <button
-                  className="edit-btn"
-                  onClick={() => navigate("/admin/teachers")}
-                >
+              <div className="stat-card">
+                <span className="stat-card-icon" aria-hidden>👨‍🏫</span>
+                <span className="stat-card-label">Total Teachers</span>
+                <span className="stat-card-value">{stats.teachersCount}</span>
+                <button type="button" className="edit-btn stat-card-btn" onClick={() => navigate("/admin/teachers")}>
                   Manage Teachers
                 </button>
               </div>
-            </div>
-
-            <div className="stat-card">
-              📚 Active Courses: <b>{stats.coursesCount}</b>
-              <div style={{ marginTop: 10 }}>
-                <button
-                  className="edit-btn"
-                  onClick={() => navigate("/admin/courses")}
-                >
+              <div className="stat-card">
+                <span className="stat-card-icon" aria-hidden>📚</span>
+                <span className="stat-card-label">Active Courses</span>
+                <span className="stat-card-value">{stats.coursesCount}</span>
+                <button type="button" className="edit-btn stat-card-btn" onClick={() => navigate("/admin/courses")}>
                   Manage Courses
                 </button>
               </div>
-            </div>
-
-            <div className="stat-card">
-              🧩 Quizzes Available: <b>{stats.quizzesCount}</b>
-              <div style={{ marginTop: 10 }}>
-                <button
-                  className="edit-btn"
-                  onClick={() => navigate("/admin/quizzes")}
-                >
+              <div className="stat-card">
+                <span className="stat-card-icon" aria-hidden>🧩</span>
+                <span className="stat-card-label">Quizzes Available</span>
+                <span className="stat-card-value">{stats.quizzesCount}</span>
+                <button type="button" className="edit-btn stat-card-btn" onClick={() => navigate("/admin/quizzes")}>
                   Manage Quizzes
                 </button>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* ✅ GRAPHS */}
-          <div className="admin-card" style={{ marginTop: 18 }}>
-            <h3 style={{ marginTop: 0 }}>Dynamic Charts (Live)</h3>
-            <p style={{ marginTop: 6, opacity: 0.8 }}>
-              Different colors per bar ✅ (Totals, Categories, Lessons/Course, Courses/Teacher)
-            </p>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(12, 1fr)",
-                gap: 14,
-                marginTop: 12,
-              }}
-            >
-              {/* 1) Totals */}
-              <div className="admin-card" style={{ gridColumn: "span 12" }}>
-                <h4 style={{ marginTop: 0 }}>Overview Totals</h4>
-                <div style={{ height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={totalsBarData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="value" name="Count">
-                        {renderColoredCells(totalsBarData)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+          {/* ANALYTICS SECTION */}
+          <section className="dashboard-section" aria-labelledby="analytics-heading">
+            <h2 id="analytics-heading" className="dashboard-section-title">Analytics</h2>
+            <div className="dashboard-charts-wrapper admin-card">
+              <p className="dashboard-charts-intro">
+                Live charts from database. Empty charts mean no data yet—add content and refresh.
+              </p>
+              <div className="dashboard-charts-grid">
+                <div className="dashboard-chart-card admin-card chart-full">
+                  <h4 className="chart-title">Overview Totals</h4>
+                  <div className="chart-inner">
+                    {totalsBarData.some((d) => d.value > 0) ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={totalsBarData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="value" name="Count">{renderColoredCells(totalsBarData)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="chart-empty">No data yet. Refresh after adding content.</p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 2) Courses by Category */}
-              <div className="admin-card" style={{ gridColumn: "span 6" }}>
-                <h4 style={{ marginTop: 0 }}>Courses by Category (Top)</h4>
-                <div style={{ height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={coursesByCategory} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={70} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="value" name="Courses">
-                        {renderColoredCells(coursesByCategory)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="dashboard-chart-card admin-card chart-half">
+                  <h4 className="chart-title">Courses by Category (Top)</h4>
+                  <div className="chart-inner">
+                    {coursesByCategory.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={coursesByCategory} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={70} />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="value" name="Courses">{renderColoredCells(coursesByCategory)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="chart-empty">No categories yet.</p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 3) Lessons per Course */}
-              <div className="admin-card" style={{ gridColumn: "span 6" }}>
-                <h4 style={{ marginTop: 0 }}>Lessons/Chapters per Course (Top)</h4>
-                <div style={{ height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={lessonsPerCourse} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={70} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="value" name="Lessons/Chapters">
-                        {renderColoredCells(lessonsPerCourse)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="dashboard-chart-card admin-card chart-half">
+                  <h4 className="chart-title">Lessons/Chapters per Course (Top)</h4>
+                  <div className="chart-inner">
+                    {lessonsPerCourse.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={lessonsPerCourse} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={70} />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="value" name="Lessons/Chapters">{renderColoredCells(lessonsPerCourse)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="chart-empty">No lessons/chapters yet.</p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 4) Courses per Teacher */}
-              <div className="admin-card" style={{ gridColumn: "span 6" }}>
-                <h4 style={{ marginTop: 0 }}>Courses per Teacher (Top)</h4>
-                <div style={{ height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={coursesPerTeacher} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={70} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar dataKey="value" name="Courses">
-                        {renderColoredCells(coursesPerTeacher)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="dashboard-chart-card admin-card chart-half">
+                  <h4 className="chart-title">Courses per Teacher (Top)</h4>
+                  <div className="chart-inner">
+                    {coursesPerTeacher.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={coursesPerTeacher} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" interval={0} angle={-15} textAnchor="end" height={70} />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Bar dataKey="value" name="Courses">{renderColoredCells(coursesPerTeacher)}</Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="chart-empty">No courses yet.</p>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 5) Users per Month (Line chart) */}
-              <div className="admin-card" style={{ gridColumn: "span 6" }}>
-                <h4 style={{ marginTop: 0 }}>New Users per Month</h4>
-                <div style={{ height: 320 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={usersPerMonth} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Legend />
-                      <Line dataKey="students" name="Students" stroke="#2563eb" dot={false} />
-                      <Line dataKey="teachers" name="Teachers" stroke="#10b981" dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="dashboard-chart-card admin-card chart-half">
+                  <h4 className="chart-title">New Users per Month</h4>
+                  <div className="chart-inner">
+                    {usersPerMonth.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={usersPerMonth} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <Line dataKey="students" name="Students" stroke="#2563eb" dot={false} />
+                          <Line dataKey="teachers" name="Teachers" stroke="#10b981" dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="chart-empty">No user signups yet.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Notes */}
-          <div className="admin-card" style={{ marginTop: 18 }}>
-            <h3 style={{ marginTop: 0 }}>Quick Notes</h3>
-            <p style={{ marginBottom: 0, opacity: 0.8 }}>
-              If some chart is empty, it means there is no data yet (no categories/lessons/etc).
-              Add data and refresh.
-            </p>
-          </div>
+          </section>
         </main>
       </div>
     </div>

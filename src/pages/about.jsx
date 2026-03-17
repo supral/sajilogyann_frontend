@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from "react";
 import "../styles/about.css";
 import { useNavigate } from "react-router-dom";
+import { useAppLogo } from "../hooks/useAppLogo.js";
+import Navbar from "../components/Navbar";
 
 const About = () => {
   const navigate = useNavigate();
+  const { appName } = useAppLogo();
 
   const categories = useMemo(
     () => [
@@ -25,10 +28,12 @@ const About = () => {
   const [active, setActive] = useState("Popular");
 
   return (
-    <div className="about-ui">
+    <>
+      <Navbar />
+      <div className="about-ui">
       {/* Top Header */}
       <section className="about-ui-hero">
-        <h1>About Sajilo Gyann</h1>
+        <h1>About {appName}</h1>
         <p>
           Learn smarter with structured courses, chapter-wise lessons, notes, tasks and MCQ practice —
           built for students and teachers.
@@ -63,7 +68,7 @@ const About = () => {
           {/* Banner (like your screenshot) */}
           <div className="about-ui-banner">
             <div>
-              <h3>Build your career with Sajilo Gyann</h3>
+              <h3>Build your career with {appName}</h3>
               <p>Structured learning + MCQ practice + downloadable notes and materials.</p>
             </div>
 
@@ -77,7 +82,7 @@ const About = () => {
 
           {/* Section Title */}
           <div className="about-ui-section-title">
-            <h2>Why Sajilo Gyann?</h2>
+            <h2>Why {appName}?</h2>
             <div className="line" />
           </div>
 
@@ -163,6 +168,7 @@ const About = () => {
         </main>
       </div>
     </div>
+    </>
   );
 };
 

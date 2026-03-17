@@ -10,7 +10,7 @@ const emptyQuestion = () => ({
 });
 
 const CreateMCQ = () => {
-  const [meta, setMeta] = useState({
+  const [meta] = useState({
     subject: "",
     chapter: "All Chapters",
     difficulty: "Medium",

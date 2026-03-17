@@ -37,6 +37,10 @@
     gap: 22px;
     padding: 0 16px;
   }
+
+  .about-ui-layout--single {
+    grid-template-columns: 1fr;
+  }
   
   /* SIDEBAR */
   .about-ui-sidebar {

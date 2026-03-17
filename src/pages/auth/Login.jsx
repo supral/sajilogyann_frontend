@@ -2,8 +2,9 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import "../../styles/auth.css";
-import loginIllustration from "../../assets/images/hero.jpg";
 import { loginApi, googleAuthApi } from "../../services/api";
+
+const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -130,7 +131,34 @@ const Login = () => {
       if (token) storage.setItem("bs_token", token);
       if (user) storage.setItem("bs_user", JSON.stringify(user));
 
-      const role = user?.role || "student";
+      const role = (user?.role || "student").toString().trim().toLowerCase();
+
+      // During maintenance: only admins get in; everyone else sees maintenance page
+      let maintenanceMode = false;
+      try {
+        const statusRes = await fetch(`${API_HOST}/api/v1/public/system-status`, { headers: { Accept: "application/json" } });
+        if (!statusRes.ok) {
+          const altRes = await fetch(`${API_HOST}/api/public/system-status`, { headers: { Accept: "application/json" } });
+          if (altRes.ok) {
+            const altData = await altRes.json();
+            maintenanceMode = !!altData?.status?.maintenanceMode;
+          }
+        } else {
+          const statusData = await statusRes.json();
+          maintenanceMode = !!statusData?.status?.maintenanceMode;
+        }
+      } catch {
+        // if status check fails, proceed with normal redirect
+      }
+
+      if (maintenanceMode) {
+        if (role === "admin") {
+          navigate("/admin-dashboard", { replace: true });
+          return;
+        }
+        navigate("/maintenance", { replace: true });
+        return;
+      }
 
       if (from) {
         navigate(from, { replace: true });
@@ -203,9 +231,37 @@ const Login = () => {
       if (token) storage.setItem("bs_token", token);
       if (user) storage.setItem("bs_user", JSON.stringify(user));
 
-      const role = user?.role || "student";
+      const role = (user?.role || "student").toString().trim().toLowerCase();
 
-      // If protected route sent user here, go back to that path
+      // During maintenance: only admins get in; everyone else sees maintenance page
+      let maintenanceMode = false;
+      try {
+        const statusRes = await fetch(`${API_HOST}/api/v1/public/system-status`, { headers: { Accept: "application/json" } });
+        if (!statusRes.ok) {
+          const altRes = await fetch(`${API_HOST}/api/public/system-status`, { headers: { Accept: "application/json" } });
+          if (altRes.ok) {
+            const altData = await altRes.json();
+            maintenanceMode = !!altData?.status?.maintenanceMode;
+          }
+        } else {
+          const statusData = await statusRes.json();
+          maintenanceMode = !!statusData?.status?.maintenanceMode;
+        }
+      } catch {
+        // if status check fails, proceed with normal redirect
+      }
+
+      if (maintenanceMode) {
+        if (role === "admin") {
+          navigate("/admin-dashboard", { replace: true });
+          return;
+        }
+        // vendor, teacher, student (any non-admin) → maintenance page
+        navigate("/maintenance", { replace: true });
+        return;
+      }
+
+      // If protected route sent user here, go back to that path (when not in maintenance)
       if (from) {
         navigate(from, { replace: true });
         return;

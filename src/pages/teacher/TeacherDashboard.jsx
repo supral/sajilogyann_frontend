@@ -214,6 +214,63 @@ const TeacherDashboard = () => {
                     </div>
                   </div>
 
+                  {/* Quick access – main system areas */}
+                  <div className="teacher-dashboard-section">
+                    <div className="section-header">
+                      <div>
+                        <h3>Quick access</h3>
+                        <p>Main areas of the system</p>
+                      </div>
+                    </div>
+                    <div className="teacher-quick-access">
+                      <button
+                        type="button"
+                        className="teacher-quick-card"
+                        onClick={() => navigate("/view-courses")}
+                      >
+                        <i className="fa-solid fa-book" />
+                        <span>My Courses</span>
+                        <small>View and manage courses, lessons & assignments</small>
+                      </button>
+                      <button
+                        type="button"
+                        className="teacher-quick-card"
+                        onClick={() => navigate("/teacher/enrolled-students")}
+                      >
+                        <i className="fa-solid fa-users" />
+                        <span>Enrolled Students</span>
+                        <small>See who is enrolled in your courses</small>
+                      </button>
+                      <button
+                        type="button"
+                        className="teacher-quick-card"
+                        onClick={() => navigate("/teacher/mcq-attempts")}
+                      >
+                        <i className="fa-solid fa-clipboard-list" />
+                        <span>MCQ Attempts</span>
+                        <small>Review student quiz attempts</small>
+                      </button>
+                      <button
+                        type="button"
+                        className="teacher-quick-card"
+                        onClick={() => navigate("/teacher/analytics")}
+                      >
+                        <i className="fa-solid fa-chart-line" />
+                        <span>Analytics & Reports</span>
+                        <small>Course and performance analytics</small>
+                      </button>
+                      <button
+                        type="button"
+                        className="teacher-quick-card teacher-quick-card-primary"
+                        onClick={() => navigate("/create-course")}
+                      >
+                        <i className="fa-solid fa-plus" />
+                        <span>Create Course</span>
+                        <small>Add a new course</small>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Comprehensive Course Analytics Graph */}
                   <div className="teacher-dashboard-section">
                     <div className="section-header">

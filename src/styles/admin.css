@@ -231,12 +231,35 @@
   letter-spacing: 0.2px;
 }
 
+.page-subtitle {
+  margin: 6px 0 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .page-header-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 14px;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dashboard-header-actions .update-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-header-actions .update-btn i {
+  font-size: 14px;
 }
 
 /* ✅ Common card used in dashboard */
@@ -249,33 +272,72 @@
 }
 
 /* =========================
+   DASHBOARD SECTIONS
+========================= */
+.dashboard-section {
+  margin-top: 24px;
+}
+
+.dashboard-section:first-of-type {
+  margin-top: 0;
+}
+
+.dashboard-section-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 12px 0;
+  letter-spacing: 0.2px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+
+/* =========================
    DASHBOARD OVERVIEW CARDS
 ========================= */
 .dashboard-overview {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 14px;
-  margin-top: 14px;
 }
 
 .stat-card {
   grid-column: span 3;
-
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-
-  padding: 16px;
+  padding: 18px;
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   transition: transform 0.12s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.stat-card b {
-  font-size: 18px;
+.stat-card-icon {
+  font-size: 24px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.stat-card-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.stat-card-value {
+  font-size: 22px;
   font-weight: 900;
+  color: var(--text);
+}
+
+.stat-card-btn {
+  margin-top: 6px;
+  align-self: flex-start;
 }
 
 .stat-card:hover {
@@ -289,6 +351,77 @@
 }
 @media (max-width: 720px) {
   .stat-card { grid-column: span 12; }
+}
+
+/* =========================
+   DASHBOARD CHARTS
+========================= */
+.dashboard-charts-wrapper {
+  padding: 18px;
+}
+
+.dashboard-charts-intro {
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.dashboard-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+.dashboard-chart-card {
+  padding: 14px;
+  min-height: 200px;
+}
+
+.dashboard-chart-card.chart-full {
+  grid-column: span 12;
+}
+
+.dashboard-chart-card.chart-half {
+  grid-column: span 6;
+}
+
+.chart-title {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.chart-inner {
+  height: 320px;
+  width: 100%;
+}
+
+.chart-empty {
+  margin: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}
+
+@media (max-width: 992px) {
+  .dashboard-chart-card.chart-half {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-charts-grid {
+    gap: 12px;
+  }
+  .chart-inner {
+    height: 260px;
+  }
 }
 
 /* Placeholder */

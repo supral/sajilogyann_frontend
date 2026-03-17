@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import "../../styles/TeacherDashboard.css";
 import {
   teacherGetMcqAttempts,
@@ -7,7 +6,6 @@ import {
 } from "../../services/api";
 
 const McqAttempts = () => {
-  const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);

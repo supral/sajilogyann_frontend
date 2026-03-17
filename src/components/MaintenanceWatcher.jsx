@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
@@ -42,7 +42,8 @@ export default function MaintenanceWatcher() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const role = useMemo(() => getRoleFromToken(), []);
+  // Re-read role when pathname changes so after login we have the correct role (admin vs non-admin)
+  const role = useMemo(() => getRoleFromToken(), [location.pathname]);
   const [maintenance, setMaintenance] = useState(false);
 
   const check = async () => {
@@ -65,17 +66,40 @@ export default function MaintenanceWatcher() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Paths visible to everyone during maintenance: landing, login, register, maintenance page, and other public pages
+  const isAllowedDuringMaintenance = useMemo(() => {
+    const path = location.pathname || "";
+    const allowed = [
+      "/maintenance",
+      "/",
+      "/login",
+      "/register",
+      "/about",
+      "/courses",
+      "/contact",
+      "/privacy-policy",
+      "/terms",
+      "/faq",
+      "/academy",
+    ];
+    if (allowed.includes(path)) return true;
+    if (path.startsWith("/course/")) return true;
+    return false;
+  }, [location.pathname]);
+
   useEffect(() => {
-    // ✅ if maintenance ON and not admin => force maintenance page
-    if (maintenance && role !== "admin" && location.pathname !== "/maintenance") {
+    // When maintenance ON and user is not admin => show maintenance page, except on allowed (landing, login, etc.)
+    if (
+      maintenance &&
+      role !== "admin" &&
+      !isAllowedDuringMaintenance
+    ) {
       navigate("/maintenance", { replace: true });
     }
-    // ✅ if maintenance OFF and currently on maintenance page => go home
     if (!maintenance && location.pathname === "/maintenance") {
       navigate("/", { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maintenance, location.pathname]);
+  }, [maintenance, role, location.pathname, isAllowedDuringMaintenance, navigate]);
 
   return null;
 }

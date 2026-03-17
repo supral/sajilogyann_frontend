@@ -202,7 +202,6 @@ export async function apiForm(path, { method = "POST", formData, auth = true } =
 ========================= */
 
 export const loginApi = async (payload) => {
-  const token = getToken();
   let lastError = null;
 
   // Try both API prefixes for login
@@ -237,9 +236,8 @@ export const loginApi = async (payload) => {
         throw err;
       }
 
-      // Success - extract token and user
+      // Success - extract token
       const loginToken = data?.token || data?.accessToken;
-      const user = data?.user || data?.data?.user || null;
 
       // Store token
       if (loginToken) {

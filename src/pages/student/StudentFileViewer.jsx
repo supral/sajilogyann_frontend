@@ -87,39 +87,13 @@ const guessType = (file) => {
   return "download";
 };
 
-const extractLessonById = (data, courseId, chapterId) => {
-  const course = data?.course || data;
-  const chapters = Array.isArray(course?.chapters) ? course.chapters : [];
-  const fromCourse = chapters.find((c) => String(c?._id) === String(chapterId)) || null;
-
-  const list = Array.isArray(data?.lessonsWithProgress) ? data.lessonsWithProgress : [];
-  const fromProgress = list.find((x) => String(x?._id) === String(chapterId)) || null;
-
-  const content =
-    fromProgress?.lesson?.chapter ||
-    fromProgress?.lesson ||
-    fromCourse ||
-    null;
-
-  return { course, content };
-};
-
-// Content types in sequence
-const CONTENT_TYPES = {
-  VIDEO: "video",
-  NOTES: "notes",
-  TASKS: "tasks",
-  DOCUMENTS: "documents",
-  MCQ: "mcq",
-};
-
 export default function StudentFileViewer() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id: courseId, chapterId } = useParams();
 
   const [lessons, setLessons] = useState([]);
-  const [course, setCourse] = useState(null);
+  const [, setCourse] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
   const [courseTitle, setCourseTitle] = useState("");
   const [loading, setLoading] = useState(true);
@@ -282,7 +256,7 @@ export default function StudentFileViewer() {
 
   useEffect(() => {
     loadCourse();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on mount/params change only
   }, [courseId, chapterId]);
 
   // Refresh course data when returning from MCQ (to unlock next lesson)
@@ -306,6 +280,7 @@ export default function StudentFileViewer() {
     setIsCompleted(false);
     setShowPostContentOptions(false);
     setSelectedPostContent(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when lesson id changes
   }, [currentLesson?._id]);
 
   // Video completion tracking - only when current content is video
@@ -417,6 +392,7 @@ export default function StudentFileViewer() {
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when URL changes
   }, [currentContent?.url]);
 
   // Handle lesson selection

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import StudentNavbar from "../student/StudentNavbar";
+import Footer from "../../components/Footer";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api", "/api/v1"];
@@ -78,26 +80,30 @@ export default function KhaltiReturn() {
   }, [pidx, navigate, token]);
 
   return (
-    <div style={{ maxWidth: 700, margin: "40px auto", padding: 20 }}>
-      <h2>Khalti Payment Status</h2>
+    <>
+      <StudentNavbar />
+      <div style={{ maxWidth: 700, margin: "40px auto", padding: 20 }}>
+        <h2>Khalti Payment Status</h2>
 
-      {status === "verifying" && <p>Verifying payment...</p>}
-      {status === "completed" && <p style={{ color: "green" }}>{message}</p>}
-      {status === "pending" && <p style={{ color: "orange" }}>{message}</p>}
-      {status === "failed" && <p style={{ color: "red" }}>{message}</p>}
-      {status === "error" && <p style={{ color: "red" }}>{message}</p>}
+        {status === "verifying" && <p>Verifying payment...</p>}
+        {status === "completed" && <p style={{ color: "green" }}>{message}</p>}
+        {status === "pending" && <p style={{ color: "orange" }}>{message}</p>}
+        {status === "failed" && <p style={{ color: "red" }}>{message}</p>}
+        {status === "error" && <p style={{ color: "red" }}>{message}</p>}
 
-      <button
-        style={{
-          marginTop: 20,
-          padding: "10px 14px",
-          border: "1px solid #ddd",
-          cursor: "pointer",
-        }}
-        onClick={() => navigate("/student-dashboard")}
-      >
-        Go to Dashboard
-      </button>
-    </div>
+        <button
+          style={{
+            marginTop: 20,
+            padding: "10px 14px",
+            border: "1px solid #ddd",
+            cursor: "pointer",
+          }}
+          onClick={() => navigate("/student-dashboard")}
+        >
+          Go to Dashboard
+        </button>
+      </div>
+      <Footer />
+    </>
   );
 }

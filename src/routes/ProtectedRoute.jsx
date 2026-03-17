@@ -21,6 +21,7 @@ export default function ProtectedRoute({ children, allowRoles, redirectToUnautho
     } catch {
       return null;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run when token or route changes
   }, [token, location.pathname]);
 
   // ✅ fallback role sources (only used if user.role missing)

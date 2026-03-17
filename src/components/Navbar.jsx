@@ -53,7 +53,7 @@ export default function Navbar() {
   const token = getToken();
   const isLoggedIn = Boolean(token);
 
-  const user = useMemo(() => getUser(), [token]);
+  const user = useMemo(() => getUser(), []);
 
   const role = user?.role || "student";
   const displayName = user?.name || user?.fullName || "Profile";
@@ -78,6 +78,10 @@ export default function Navbar() {
     localStorage.removeItem("bs_user");
     sessionStorage.removeItem("bs_token");
     sessionStorage.removeItem("bs_user");
+    ["bs_role", "userRole", "role"].forEach((k) => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
     setProfileOpen(false);
     setBrowseOpen(false);
     navigate("/", { replace: true });
@@ -229,8 +233,14 @@ export default function Navbar() {
     return (a + b).toUpperCase();
   }, [displayName]);
 
-  // ✅ Get app logo
-  const { logoUrl } = useAppLogo();
+  // ✅ Get app logo and name (dynamic from backend settings)
+  const { logoUrl, appName } = useAppLogo();
+  const logoFallbackText = useMemo(() => {
+    const s = String(appName || "S").trim();
+    const words = s.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return s.slice(0, 2).toUpperCase() || "SG";
+  }, [appName]);
 
   return (
     <header className="tnav">
@@ -247,99 +257,99 @@ export default function Navbar() {
               alt="Logo"
               className="tnav__logo"
               style={{
-                width: "32px",
-                height: "32px",
+                width: "80px",
+                height: "80px",
                 objectFit: "contain",
                 borderRadius: "10px",
               }}
               onError={(e) => {
-                // Fallback to text if image fails to load
                 e.target.style.display = "none";
                 if (!e.target.nextSibling) {
                   const textLogo = document.createElement("span");
                   textLogo.className = "tnav__logo";
-                  textLogo.textContent = "SG";
+                  textLogo.textContent = logoFallbackText;
                   e.target.parentNode.insertBefore(textLogo, e.target);
                 }
               }}
             />
           ) : (
-            <span className="tnav__logo">SG</span>
+            <span className="tnav__logo">{logoFallbackText}</span>
           )}
-          <span className="tnav__title">Sajilo Gyann</span>
         </div>
 
-        {/* Browse */}
-        <div ref={browseRef} style={{ position: "relative" }}>
-          <button
-            type="button"
-            className={`tnav__btn tnav__btn--browse ${browseOpen ? "active" : ""}`}
-            onClick={toggleBrowse}
-          >
-            <i className="fa-solid fa-compass" />
-            <span>Browse</span>
-            <i className={`fa-solid fa-chevron-down ${browseOpen ? "rotated" : ""}`} />
-          </button>
+        {/* Browse (students and guests only) */}
+        {role === "student" && (
+          <div ref={browseRef} style={{ position: "relative" }}>
+            <button
+              type="button"
+              className={`tnav__btn tnav__btn--browse ${browseOpen ? "active" : ""}`}
+              onClick={toggleBrowse}
+            >
+              <i className="fa-solid fa-compass" />
+              <span>Browse</span>
+              <i className={`fa-solid fa-chevron-down ${browseOpen ? "rotated" : ""}`} />
+            </button>
 
-          {browseOpen && (
-            <div className="tnav__menu tnav__browseMenu">
-              <div className="tnav__menuHeader">
-                <i className="fa-solid fa-layer-group" />
-                <span>Browse Categories</span>
+            {browseOpen && (
+              <div className="tnav__menu tnav__browseMenu">
+                <div className="tnav__menuHeader">
+                  <i className="fa-solid fa-layer-group" />
+                  <span>Browse Categories</span>
+                </div>
+
+                <div className="tnav__divider" />
+
+                {catLoading ? (
+                  <div className="tnav__menuLoading">
+                    <i className="fa-solid fa-spinner fa-spin" />
+                    <span>Loading categories...</span>
+                  </div>
+                ) : categories.length ? (
+                  <div className="tnav__menuList">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        className="tnav__menuBtn"
+                        onClick={() => onPickCategory(cat)}
+                      >
+                        <i className="fa-solid fa-book" />
+                        <span>{cat}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="tnav__menuEmpty">
+                    <i className="fa-solid fa-inbox" />
+                    <span>No categories found</span>
+                    <small>Ensure your courses have a category field</small>
+                  </div>
+                )}
+
+                <div className="tnav__divider" />
+
+                <button
+                  type="button"
+                  className="tnav__menuBtn tnav__menuBtn--primary"
+                  onClick={() => {
+                    setBrowseOpen(false);
+                    navigate("/");
+                    // Scroll to courses section
+                    setTimeout(() => {
+                      const coursesSection = document.querySelector(".courses-section");
+                      if (coursesSection) {
+                        coursesSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }
+                    }, 100);
+                  }}
+                >
+                  <i className="fa-solid fa-graduation-cap" />
+                  <span>View All Courses</span>
+                </button>
               </div>
-
-              <div className="tnav__divider" />
-
-              {catLoading ? (
-                <div className="tnav__menuLoading">
-                  <i className="fa-solid fa-spinner fa-spin" />
-                  <span>Loading categories...</span>
-                </div>
-              ) : categories.length ? (
-                <div className="tnav__menuList">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className="tnav__menuBtn"
-                      onClick={() => onPickCategory(cat)}
-                    >
-                      <i className="fa-solid fa-book" />
-                      <span>{cat}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="tnav__menuEmpty">
-                  <i className="fa-solid fa-inbox" />
-                  <span>No categories found</span>
-                  <small>Ensure your courses have a category field</small>
-                </div>
-              )}
-
-              <div className="tnav__divider" />
-
-              <button
-                type="button"
-                className="tnav__menuBtn tnav__menuBtn--primary"
-                onClick={() => {
-                  setBrowseOpen(false);
-                  navigate("/");
-                  // Scroll to courses section
-                  setTimeout(() => {
-                    const coursesSection = document.querySelector('.courses-section');
-                    if (coursesSection) {
-                      coursesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }, 100);
-                }}
-              >
-                <i className="fa-solid fa-graduation-cap" />
-                <span>View All Courses</span>
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
       </div>
 

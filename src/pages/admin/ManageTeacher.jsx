@@ -129,6 +129,7 @@ const ManageTeacher = () => {
     }, 0);
 
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   // Search filtering

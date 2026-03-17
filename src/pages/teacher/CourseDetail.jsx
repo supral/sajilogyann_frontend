@@ -222,13 +222,20 @@ const CourseDetail = () => {
                   </div>
                 </div>
 
-                {/* Upload Lesson -> redirect */}
+                {/* Upload Lesson & Add Assignment */}
                 <div className="course-actions" style={{ marginBottom: 20 }}>
                   <button
                     className="primary-btn"
                     onClick={() => navigate(`/teacher/courses/${id}/create-lesson`)}
                   >
                     Upload Lesson
+                  </button>
+                  <button
+                    className="secondary-btn"
+                    onClick={() => navigate(`/teacher/courses/${id}/create-lesson`)}
+                    title="Add task/assignment files to a new lesson"
+                  >
+                    Add Assignment
                   </button>
                 </div>
 

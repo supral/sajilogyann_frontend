@@ -1,27 +1,22 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppLogo } from "../hooks/useAppLogo.js";
 import "../styles/footer.css";
 
 const Footer = () => {
   const navigate = useNavigate();
   const year = new Date().getFullYear();
+  const { appName } = useAppLogo();
 
   return (
     <>
       {/* MAIN FOOTER */}
       <footer className="bs-footer">
         <div className="bs-footer-inner">
-          {/* FEATURED */}
+          {/* FEATURED - optional; keep minimal or from settings later */}
           <div className="bs-featured">
-            <span className="label">FEATURED IN</span>
-            <span>Inc.</span>
-            <span>Entrepreneur</span>
-            <span>Forbes</span>
-            <span>The Guardian</span>
-            <span>mozilla</span>
-            <span>Business Insider</span>
-            <span>msn</span>
-            <span>WIRED</span>
+            <span className="label">LEARNING PLATFORM</span>
+            <span>{appName}</span>
           </div>
 
           <div className="divider" />
@@ -30,9 +25,9 @@ const Footer = () => {
           <div className="bs-footer-grid">
             {/* ABOUT */}
             <div>
-              <h4>About BlueSheep</h4>
+              <h4>About {appName}</h4>
               <p>
-                BlueSheep is a learning platform built for students and
+                {appName} is a learning platform built for students and
                 professionals. Learn with structured courses, quizzes,
                 certificates, and Academy Pro+.
               </p>
@@ -69,20 +64,6 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* SUBJECTS */}
-            <div>
-              <h4>Popular Subjects</h4>
-              <ul>
-                <li>Leadership Program</li>
-                <li>Organizational Behavior</li>
-                <li>Principles of Management</li>
-                <li>Principles of Marketing</li>
-                <li>Sociology</li>
-                <li>Psychology</li>
-                <li>Management of Human Resource</li>
-              </ul>
-            </div>
-
             {/* CTA */}
             <div className="cta-box">
               <h4>Start Learning</h4>
@@ -113,7 +94,7 @@ const Footer = () => {
       <div className="bs-footer-bottom">
         <div className="bs-footer-bottom-inner">
           <p>
-            Copyright © {year} BlueSheep. All Rights Reserved.
+            Copyright © {year} {appName}. All Rights Reserved.
             <span>•</span>
             <button onClick={() => navigate("/privacy-policy")}>Privacy</button>
             <span>•</span>

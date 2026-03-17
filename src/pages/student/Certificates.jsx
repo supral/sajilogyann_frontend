@@ -180,15 +180,6 @@ export default function Certificates() {
     }
   };
 
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   return (
     <StudentPageLayout title="My Certificates" activePath="/student/certificates">
       {loading ? (
@@ -207,7 +198,6 @@ export default function Certificates() {
       {!loading && certificates.length > 0 && (
         <div className="cert-list">
           {certificates.map((cert) => {
-            const certId = String(cert._id || cert.certificateNo || "");
             const gpaPointsText = cert.gpaPoints != null ? String(cert.gpaPoints) : safeStr(cert.gpaPoints, "—");
             
             return (

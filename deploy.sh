@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # deploy.sh - Deploy React frontend for Sajilogyaan LMS
-# Run from frontend (bluesheep) directory: ./deploy.sh
+# Run from frontend (sajilogyaan) directory: ./deploy.sh
 #
 
 set -e

@@ -1,4 +1,4 @@
-// bluesheep/src/pages/student/StudentLessonViewer.jsx
+// sajilogyaan/src/pages/student/StudentLessonViewer.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import StudentNavbar from "./StudentNavbar";
@@ -65,7 +65,6 @@ const normalizeFileMeta = (fileMeta) => {
 export default function StudentLessonViewer() {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
@@ -76,7 +75,7 @@ export default function StudentLessonViewer() {
   // Time tracking
   const [timeSpent, setTimeSpent] = useState(0); // in seconds
   const [isCompleted, setIsCompleted] = useState(false);
-  const [readingStartTime, setReadingStartTime] = useState(null);
+  const [, setReadingStartTime] = useState(null);
   const intervalRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -90,7 +89,7 @@ export default function StudentLessonViewer() {
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   
   // Track if all files are completed and what to show next
-  const [showPostContentOptions, setShowPostContentOptions] = useState(false);
+  const [, setShowPostContentOptions] = useState(false);
   const [selectedPostContent, setSelectedPostContent] = useState(null); // "caseStudy" or "mcq"
 
   // Current lesson index
@@ -258,6 +257,7 @@ export default function StudentLessonViewer() {
     if (courseId && lessonId) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run when params change only
   }, [courseId, lessonId]);
 
   // Refresh course data when returning from MCQ (to unlock next lesson)
@@ -271,6 +271,7 @@ export default function StudentLessonViewer() {
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on focus; loadData stable
   }, [courseId, lessonId, loading]);
 
   // Time tracking for reading materials
@@ -336,6 +337,7 @@ export default function StudentLessonViewer() {
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("ended", handleEnded);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when current content changes
   }, [currentContent]);
 
   // Check if URL is publicly accessible (not localhost or private)
@@ -421,7 +423,7 @@ export default function StudentLessonViewer() {
     }
   }, [currentContent?.url]);
 
-  const handleNext = () => {
+  const _handleNext = () => {
     if (currentIndex < lessons.length - 1) {
       const nextLesson = lessons[currentIndex + 1];
       const nextId = nextLesson._id || nextLesson.lessonId || nextLesson.id;
@@ -440,7 +442,7 @@ export default function StudentLessonViewer() {
     }
   };
 
-  const handlePrevious = () => {
+  const _handlePrevious = () => {
     if (currentIndex > 0) {
       const prevLesson = lessons[currentIndex - 1];
       const prevId = prevLesson._id || prevLesson.lessonId || prevLesson.id;
@@ -448,7 +450,7 @@ export default function StudentLessonViewer() {
     }
   };
 
-  const openFile = (fileMeta, type = "materials", idx = 0) => {
+  const _openFile = (fileMeta, type = "materials", idx = 0) => {
     // Find the file in allFiles array
     const fileIndex = allFiles.findIndex(
       (f) => f.type === type && f.originalIndex === idx
@@ -463,7 +465,7 @@ export default function StudentLessonViewer() {
     setIsFileViewerOpen(true);
   };
 
-  const openFileByIndex = (index) => {
+  const _openFileByIndex = (index) => {
     if (index >= 0 && index < allFiles.length) {
       setCurrentFileIndex(index);
       setIsFileViewerOpen(true);
@@ -592,7 +594,7 @@ export default function StudentLessonViewer() {
   }
 
   const lessonTitle = lesson?.title || lesson?.chapterName || lessonContent?.chapterName || "Lesson";
-  const isLastLesson = currentIndex === lessons.length - 1;
+  const _isLastLesson = currentIndex === lessons.length - 1;
 
   const renderFileViewer = () => {
     if (!isFileViewerOpen || !currentFile) return null;
