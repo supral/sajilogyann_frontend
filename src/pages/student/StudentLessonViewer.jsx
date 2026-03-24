@@ -1,8 +1,9 @@
 // sajilogyaan/src/pages/student/StudentLessonViewer.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import StudentNavbar from "./StudentNavbar";
 import OfficeFileViewer from "../../components/OfficeFileViewer";
+import PDFViewer from "../../components/PDFViewer";
 import "../../styles/StudentLessonViewer.css";
 import "../../styles/dashboard.css";
 
@@ -56,6 +57,10 @@ const normalizeFileMeta = (fileMeta) => {
     type: typeof fileMeta === "string" 
       ? "" 
       : fileMeta.mimeType || fileMeta.type || "",
+    mimeType:
+      typeof fileMeta === "string"
+        ? ""
+        : fileMeta.mimeType || "",
     size: typeof fileMeta === "string" 
       ? 0 
       : fileMeta.size || 0,
@@ -91,6 +96,8 @@ export default function StudentLessonViewer() {
   // Track if all files are completed and what to show next
   const [, setShowPostContentOptions] = useState(false);
   const [selectedPostContent, setSelectedPostContent] = useState(null); // "caseStudy" or "mcq"
+  const [lessonPdfPage, setLessonPdfPage] = useState(1);
+  const [lessonPdfNumPages, setLessonPdfNumPages] = useState(null);
 
   // Current lesson index
   const currentIndex = useMemo(() => {
@@ -311,6 +318,11 @@ export default function StudentLessonViewer() {
     return allFiles[currentContentIndex];
   }, [allFiles, currentContentIndex]);
 
+  useEffect(() => {
+    setLessonPdfPage(1);
+    setLessonPdfNumPages(null);
+  }, [currentContent, currentContentIndex]);
+
   // Video completion tracking - only when current content is video
   useEffect(() => {
     const video = videoRef.current;
@@ -421,15 +433,14 @@ export default function StudentLessonViewer() {
         });
       }
     }
-  }, [currentContent?.url]);
+  }, [currentContent]);
 
-  const _handleNext = () => {
+  const handleNextLesson = () => {
     if (currentIndex < lessons.length - 1) {
       const nextLesson = lessons[currentIndex + 1];
       const nextId = nextLesson._id || nextLesson.lessonId || nextLesson.id;
       navigate(`/student/courses/${courseId}/lessons/${nextId}`);
     } else {
-      // Last lesson - navigate to quiz
       navigate(`/student/courses/${courseId}/chapters/${lessonId}/mcq`, {
         state: {
           courseId,
@@ -442,33 +453,11 @@ export default function StudentLessonViewer() {
     }
   };
 
-  const _handlePrevious = () => {
+  const handlePreviousLesson = () => {
     if (currentIndex > 0) {
       const prevLesson = lessons[currentIndex - 1];
       const prevId = prevLesson._id || prevLesson.lessonId || prevLesson.id;
       navigate(`/student/courses/${courseId}/lessons/${prevId}`);
-    }
-  };
-
-  const _openFile = (fileMeta, type = "materials", idx = 0) => {
-    // Find the file in allFiles array
-    const fileIndex = allFiles.findIndex(
-      (f) => f.type === type && f.originalIndex === idx
-    );
-    
-    if (fileIndex === -1) {
-      alert("File not found");
-      return;
-    }
-    
-    setCurrentFileIndex(fileIndex);
-    setIsFileViewerOpen(true);
-  };
-
-  const _openFileByIndex = (index) => {
-    if (index >= 0 && index < allFiles.length) {
-      setCurrentFileIndex(index);
-      setIsFileViewerOpen(true);
     }
   };
 
@@ -491,9 +480,33 @@ export default function StudentLessonViewer() {
 
   const guessFileType = (file) => {
     if (!file?.url) return "download";
+    const mime = String(file.mimeType || "").toLowerCase();
+    if (mime.startsWith("image/")) return "image";
+    if (mime === "application/pdf" || mime.includes("pdf")) return "pdf";
+    if (mime.startsWith("video/")) return "video";
+    if (mime.startsWith("audio/")) return "audio";
+    if (
+      mime.includes("wordprocessingml") ||
+      mime.includes("msword") ||
+      mime.includes("spreadsheetml") ||
+      mime.includes("excel") ||
+      mime.includes("officedocument") ||
+      mime.includes("presentationml") ||
+      mime.includes("powerpoint") ||
+      mime.includes("opendocument")
+    )
+      return "office";
+    if (
+      mime.startsWith("text/") ||
+      mime === "application/json" ||
+      mime === "application/xml" ||
+      mime === "application/csv"
+    )
+      return "text";
+
     const url = String(file.url).toLowerCase();
     const ext = url.split("?")[0].split(".").pop() || "";
-    
+
     // Image formats - comprehensive list
     if (["png", "jpg", "jpeg", "jpe", "gif", "webp", "bmp", "svg", "ico", "tiff", "tif", "avif", "heic", "heif"].includes(ext)) return "image";
     
@@ -524,6 +537,29 @@ export default function StudentLessonViewer() {
     // Microsoft Office Online Viewer (primary)
     return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
   };
+
+  const handleLessonNavNext = () => {
+    const isPdf = currentContent && guessFileType(currentContent) === "pdf";
+    if (isPdf && lessonPdfNumPages != null && lessonPdfPage < lessonPdfNumPages) {
+      setLessonPdfPage((p) => p + 1);
+      return;
+    }
+    handleNextContent();
+  };
+
+  const handleLessonNavPrev = () => {
+    const isPdf = currentContent && guessFileType(currentContent) === "pdf";
+    if (isPdf && lessonPdfPage > 1) {
+      setLessonPdfPage((p) => p - 1);
+      return;
+    }
+    handlePreviousContent();
+  };
+
+  const lessonNavPrevDisabled =
+    currentContent && guessFileType(currentContent) === "pdf"
+      ? lessonPdfPage <= 1 && currentContentIndex === 0
+      : currentContentIndex === 0;
 
   const startQuiz = () => {
     navigate(`/student/courses/${courseId}/chapters/${lessonId}/mcq`, {
@@ -594,12 +630,153 @@ export default function StudentLessonViewer() {
   }
 
   const lessonTitle = lesson?.title || lesson?.chapterName || lessonContent?.chapterName || "Lesson";
-  const _isLastLesson = currentIndex === lessons.length - 1;
+  const isLastLesson = currentIndex >= 0 && currentIndex === lessons.length - 1;
+
+  /** Renders PDF / image / office / etc. Used inline (full page area) and in the overlay viewer. */
+  const renderMediaBody = (file, { overlay = false } = {}) => {
+    if (!file?.url) return null;
+    const fileType = guessFileType(file);
+    const inlineFrameMin = "min(72vh, 900px)";
+    const linkBtn = {
+      padding: "12px 24px",
+      background: "#1976d2",
+      color: "white",
+      textDecoration: "none",
+      borderRadius: "4px",
+      display: "inline-block",
+    };
+    const muted = overlay ? "#fff" : "#0f172a";
+    const subMuted = overlay ? "#aaa" : "#64748b";
+
+    return (
+      <>
+        {fileType === "image" ? (
+          <img
+            src={file.url}
+            alt={file.name}
+            style={{
+              maxWidth: "100%",
+              maxHeight: overlay ? "100%" : "72vh",
+              objectFit: "contain",
+            }}
+            onError={(e) => {
+              e.target.style.display = "none";
+              const parent = e.target.parentNode;
+              const errorDiv = document.createElement("div");
+              errorDiv.style.cssText = overlay
+                ? "color: white; text-align: center; padding: 20px;"
+                : "color: #0f172a; text-align: center; padding: 20px;";
+              errorDiv.innerHTML = `
+                  <p style="margin-bottom: 16px;">Failed to load image</p>
+                  <a href="${file.url}" target="_blank" rel="noreferrer" download 
+                     style="padding: 12px 24px; background: #1976d2; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
+                    Download Image
+                  </a>
+                `;
+              parent.appendChild(errorDiv);
+            }}
+          />
+        ) : fileType === "pdf" ? (
+          overlay ? (
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "min(1100px, 100%)",
+                margin: "0 auto",
+              }}
+            >
+              <PDFViewer url={file.url} fileName={file.name} />
+            </div>
+          ) : null
+        ) : fileType === "video" ? (
+          <video
+            src={file.url}
+            controls
+            style={{
+              maxWidth: "100%",
+              maxHeight: overlay ? "100%" : "72vh",
+            }}
+          >
+            Your browser does not support the video tag.
+          </video>
+        ) : fileType === "office" ? (
+          !isPublicUrl(file.url) || officeViewerError[file.url] ? (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                backgroundColor: "white",
+                padding: "20px",
+                minHeight: overlay ? "400px" : inlineFrameMin,
+                boxSizing: "border-box",
+              }}
+            >
+              <OfficeFileViewer fileUrl={file.url} fileName={file.name} />
+            </div>
+          ) : (
+            <iframe
+              src={getOfficeViewerUrl(file.url, useGoogleViewer[file.url])}
+              style={{
+                width: "100%",
+                height: "100%",
+                border: "none",
+                minHeight: overlay ? "min(78vh, 880px)" : inlineFrameMin,
+                backgroundColor: "white",
+              }}
+              title={file.name}
+              allowFullScreen
+              onError={() => {
+                if (!useGoogleViewer[file.url]) {
+                  setUseGoogleViewer((prev) => ({ ...prev, [file.url]: true }));
+                } else {
+                  setOfficeViewerError((prev) => ({ ...prev, [file.url]: true }));
+                }
+              }}
+            />
+          )
+        ) : fileType === "audio" ? (
+          <div style={{ color: muted, textAlign: "center", padding: overlay ? "40px" : "24px" }}>
+            <audio
+              controls
+              src={file.url}
+              style={{ width: "100%", maxWidth: "600px", marginBottom: "20px" }}
+            >
+              Your browser does not support the audio element.
+            </audio>
+            <a href={file.url} target="_blank" rel="noreferrer" download style={linkBtn}>
+              📥 Download Audio
+            </a>
+          </div>
+        ) : fileType === "text" ? (
+          <iframe
+            src={file.url}
+            style={{
+              width: "100%",
+              height: "100%",
+              border: "none",
+              minHeight: overlay ? "600px" : inlineFrameMin,
+              backgroundColor: "white",
+              color: "black",
+            }}
+            title={file.name}
+          />
+        ) : (
+          <div style={{ color: muted, textAlign: "center" }}>
+            <p style={{ fontSize: "18px", marginBottom: "16px" }}>{file.name}</p>
+            <a href={file.url} target="_blank" rel="noreferrer" style={linkBtn}>
+              📥 Download File
+            </a>
+            <p style={{ fontSize: "13px", marginTop: "12px", color: subMuted }}>
+              Preview is not available for this file type.
+            </p>
+          </div>
+        )}
+      </>
+    );
+  };
 
   const renderFileViewer = () => {
     if (!isFileViewerOpen || !currentFile) return null;
-
-    const fileType = guessFileType(currentFile);
 
     return (
       <div
@@ -671,143 +848,7 @@ export default function StudentLessonViewer() {
             overflow: "auto",
           }}
         >
-          {fileType === "image" ? (
-            <img
-              src={currentFile.url}
-              alt={currentFile.name}
-              style={{
-                maxWidth: "100%",
-                maxHeight: "100%",
-                objectFit: "contain",
-              }}
-              onError={(e) => {
-                e.target.style.display = "none";
-                const parent = e.target.parentNode;
-                const errorDiv = document.createElement("div");
-                errorDiv.style.cssText = "color: white; text-align: center; padding: 20px;";
-                errorDiv.innerHTML = `
-                  <p style="margin-bottom: 16px;">Failed to load image</p>
-                  <a href="${currentFile.url}" target="_blank" rel="noreferrer" download 
-                     style="padding: 12px 24px; background: #1976d2; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
-                    Download Image
-                  </a>
-                `;
-                parent.appendChild(errorDiv);
-              }}
-            />
-          ) : fileType === "pdf" ? (
-            <iframe
-              src={currentFile.url}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-                minHeight: "600px",
-              }}
-              title={currentFile.name}
-            />
-          ) : fileType === "video" ? (
-            <video
-              src={currentFile.url}
-              controls
-              style={{
-                maxWidth: "100%",
-                maxHeight: "100%",
-              }}
-            >
-              Your browser does not support the video tag.
-            </video>
-          ) : fileType === "office" ? (
-            !isPublicUrl(currentFile.url) || officeViewerError[currentFile.url] ? (
-              // For localhost files or when viewer fails, use OfficeFileViewer component
-              <div style={{ width: "100%", height: "100%", backgroundColor: "white", padding: "20px" }}>
-                <OfficeFileViewer
-                  fileUrl={currentFile.url}
-                  fileName={currentFile.name}
-                />
-              </div>
-            ) : (
-              <iframe
-                src={getOfficeViewerUrl(currentFile.url, useGoogleViewer[currentFile.url])}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                  minHeight: "600px",
-                  backgroundColor: "white",
-                }}
-                title={currentFile.name}
-                allowFullScreen
-                onError={() => {
-                  if (!useGoogleViewer[currentFile.url]) {
-                    setUseGoogleViewer(prev => ({ ...prev, [currentFile.url]: true }));
-                  } else {
-                    setOfficeViewerError(prev => ({ ...prev, [currentFile.url]: true }));
-                  }
-                }}
-              />
-            )
-          ) : fileType === "audio" ? (
-            <div style={{ color: "white", textAlign: "center", padding: "40px" }}>
-              <audio
-                controls
-                src={currentFile.url}
-                style={{ width: "100%", maxWidth: "600px", marginBottom: "20px" }}
-              >
-                Your browser does not support the audio element.
-              </audio>
-              <a
-                href={currentFile.url}
-                target="_blank"
-                rel="noreferrer"
-                download
-                style={{
-                  padding: "12px 24px",
-                  background: "#1976d2",
-                  color: "white",
-                  textDecoration: "none",
-                  borderRadius: "4px",
-                  display: "inline-block",
-                }}
-              >
-                📥 Download Audio
-              </a>
-            </div>
-          ) : fileType === "text" ? (
-            <iframe
-              src={currentFile.url}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-                minHeight: "600px",
-                backgroundColor: "white",
-                color: "black",
-              }}
-              title={currentFile.name}
-            />
-          ) : (
-            <div style={{ color: "white", textAlign: "center" }}>
-              <p style={{ fontSize: "18px", marginBottom: "16px" }}>
-                {currentFile.name}
-              </p>
-              <a
-                href={currentFile.url}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  padding: "12px 24px",
-                  background: "#1976d2",
-                  color: "white",
-                  textDecoration: "none",
-                  borderRadius: "4px",
-                  display: "inline-block",
-                }}
-              >
-                📥 Download File
-              </a>
-            </div>
-          )}
+          {renderMediaBody(currentFile, { overlay: true })}
         </div>
 
         {/* Navigation Buttons */}
@@ -940,13 +981,37 @@ export default function StudentLessonViewer() {
                 ) : (
                   <>
                     <div className="scd-content-head">
-                      <h2 className="scd-content-title">{lessonTitle}</h2>
-                      <div className="scd-muted" style={{ marginTop: 6 }}>
-                        Lesson {currentIndex + 1} of {lessons.length}
-                        {!hasVideo && materials.length > 0 && (
-                          <span style={{ marginLeft: "12px" }}>
-                            Reading time: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, "0")}
-                          </span>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 12, width: "100%" }}>
+                        <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                          <h2 className="scd-content-title" style={{ margin: 0 }}>{lessonTitle}</h2>
+                          <div className="scd-muted" style={{ marginTop: 6 }}>
+                            Lesson {currentIndex + 1} of {lessons.length}
+                            {!hasVideo && materials.length > 0 && (
+                              <span style={{ marginLeft: "12px" }}>
+                                Reading time: {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, "0")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {lessons.length > 1 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                            <button
+                              type="button"
+                              className="scd-btn scd-btn-ghost"
+                              disabled={currentIndex <= 0}
+                              onClick={handlePreviousLesson}
+                              style={{ opacity: currentIndex <= 0 ? 0.5 : 1, cursor: currentIndex <= 0 ? "not-allowed" : "pointer" }}
+                            >
+                              ← Previous lesson
+                            </button>
+                            <button
+                              type="button"
+                              className="scd-btn scd-btn-ghost"
+                              onClick={handleNextLesson}
+                            >
+                              {isLastLesson ? "MCQ / finish →" : "Next lesson →"}
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1012,30 +1077,31 @@ export default function StudentLessonViewer() {
 
                       {/* File Display (Materials, Notes, Tasks, Case Study) */}
                       {currentContent.type !== "video" && (
-                        <div className="slv-materials-section">
-                          <h2>
-                            {currentContent.type === "materials" && "📎 Lesson Materials"}
-                            {currentContent.type === "notesFiles" && "📝 Notes Files"}
-                            {currentContent.type === "taskFiles" && "✅ Task Files"}
-                            {currentContent.type === "caseStudy" && "📄 Case Study"}
-                          </h2>
-                          <div style={{ marginTop: "1rem" }}>
-                            <div className="slv-material-item">
-                              <div className="slv-material-info">
-                                <i className="fa-solid fa-file"></i>
-                                <span>{currentContent.name}</span>
-                                {currentContent.size > 0 && (
-                                  <span className="slv-file-size">
-                                    ({(currentContent.size / 1024).toFixed(1)} KB)
-                                  </span>
-                                )}
-                              </div>
+                        <div className="slv-materials-section" style={{ width: "100%" }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: "0.75rem" }}>
+                            <h2 style={{ margin: 0 }}>
+                              {currentContent.type === "materials" && "📎 Lesson Materials"}
+                              {currentContent.type === "notesFiles" && "📝 Notes Files"}
+                              {currentContent.type === "taskFiles" && "✅ Task Files"}
+                              {currentContent.type === "caseStudy" && "📄 Case Study"}
+                            </h2>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                              {currentContent.size > 0 && (
+                                <span className="slv-file-size" style={{ fontSize: "0.875rem" }}>
+                                  {(currentContent.size / 1024).toFixed(1)} KB
+                                </span>
+                              )}
+                              <span style={{ fontSize: "0.875rem", color: "#64748b", maxWidth: 280, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={currentContent.name}>
+                                {currentContent.name}
+                              </span>
                               <button
+                                type="button"
                                 className="slv-btn-view"
                                 onClick={() => {
                                   const fileIndex = allFiles.findIndex(
-                                    (f) => f.type === currentContent.type && 
-                                    (f.originalIndex === currentContent.originalIndex || f === currentContent)
+                                    (f) =>
+                                      f.type === currentContent.type &&
+                                      (f.originalIndex === currentContent.originalIndex || f === currentContent)
                                   );
                                   if (fileIndex !== -1) {
                                     setCurrentFileIndex(fileIndex);
@@ -1043,10 +1109,78 @@ export default function StudentLessonViewer() {
                                   }
                                 }}
                               >
-                                Open in Viewer
+                                Fullscreen
                               </button>
+                              <a
+                                className="slv-btn-view"
+                                href={currentContent.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                              >
+                                Open in new tab
+                              </a>
                             </div>
                           </div>
+                          {guessFileType(currentContent) === "pdf" ? (
+                            <div
+                              className="slv-inline-viewport"
+                              style={{
+                                width: "100%",
+                                minHeight: "min(78vh, 920px)",
+                                background: "#fff",
+                                borderRadius: 12,
+                                border: "1px solid #e2e8f0",
+                                overflow: "hidden",
+                                display: "flex",
+                                flexDirection: "column",
+                                boxSizing: "border-box",
+                              }}
+                            >
+                              <PDFViewer
+                                variant="embedded"
+                                hideBuiltInPageControls
+                                showZoom={false}
+                                url={currentContent.url}
+                                fileName={currentContent.name}
+                                page={lessonPdfPage}
+                                onPageChange={setLessonPdfPage}
+                                onNumPagesReady={setLessonPdfNumPages}
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              className="slv-inline-viewport"
+                              style={{
+                                width: "100%",
+                                minHeight: "min(72vh, 900px)",
+                                background: "#fff",
+                                borderRadius: 12,
+                                border: "1px solid #e2e8f0",
+                                overflow: "auto",
+                                display: "flex",
+                                alignItems: "stretch",
+                                justifyContent: "center",
+                                boxSizing: "border-box",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "100%",
+                                  padding: 12,
+                                  boxSizing: "border-box",
+                                  flex: 1,
+                                  display: "flex",
+                                  justifyContent: "center",
+                                  alignItems: "flex-start",
+                                }}
+                              >
+                                {renderMediaBody(currentContent, {
+                                  overlay: false,
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                       </div>
@@ -1154,25 +1288,44 @@ export default function StudentLessonViewer() {
                         }}>
                           <button
                             className="slv-btn-nav slv-btn-prev"
-                            onClick={handlePreviousContent}
-                            disabled={currentContentIndex === 0}
-                            style={{ opacity: currentContentIndex === 0 ? 0.5 : 1, cursor: currentContentIndex === 0 ? "not-allowed" : "pointer" }}
+                            onClick={handleLessonNavPrev}
+                            disabled={lessonNavPrevDisabled}
+                            style={{
+                              opacity: lessonNavPrevDisabled ? 0.5 : 1,
+                              cursor: lessonNavPrevDisabled ? "not-allowed" : "pointer",
+                            }}
                           >
                             ← Previous
                           </button>
                           
                           <div style={{ color: "#64748b", fontSize: "0.95rem", textAlign: "center" }}>
-                            <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                              {currentContentIndex + 1} of {allFiles.length}
-                            </div>
-                            <div style={{ fontSize: "0.875rem" }}>
-                              {currentContent.category}
-                            </div>
+                            {currentContent &&
+                            guessFileType(currentContent) === "pdf" &&
+                            lessonPdfNumPages != null ? (
+                              <>
+                                <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                  Page {lessonPdfPage} of {lessonPdfNumPages}
+                                </div>
+                                <div style={{ fontSize: "0.875rem" }}>
+                                  Material {currentContentIndex + 1} of {allFiles.length} ·{" "}
+                                  {currentContent.category}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                  {currentContentIndex + 1} of {allFiles.length}
+                                </div>
+                                <div style={{ fontSize: "0.875rem" }}>
+                                  {currentContent.category}
+                                </div>
+                              </>
+                            )}
                           </div>
 
                           <button
                             className="slv-btn-nav slv-btn-primary"
-                            onClick={handleNextContent}
+                            onClick={handleLessonNavNext}
                             style={{ 
                               cursor: "pointer"
                             }}

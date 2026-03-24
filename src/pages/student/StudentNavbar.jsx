@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../../styles/NavbarAfterLogin.css";
 import { useAppLogo } from "../../hooks/useAppLogo.js";
+import { buildProfileImageUrl } from "../../utils/profileImageUrl.js";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api", "/api/v1"];
@@ -50,6 +51,9 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
   }, [userProp]);
 
   const [updatedUser, setUpdatedUser] = useState(null);
+  const [fetchedProfileUser, setFetchedProfileUser] = useState(null);
+  const [avatarBroken, setAvatarBroken] = useState(false);
+
   useEffect(() => {
     const handler = (e) => {
       if (e.detail && typeof e.detail === "object") setUpdatedUser(e.detail);
@@ -58,16 +62,17 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
     return () => window.removeEventListener("bs-user-updated", handler);
   }, []);
 
-  const user = updatedUser || storageUser;
+  const user = updatedUser || fetchedProfileUser || storageUser;
 
   const displayName = user?.name || user?.fullName || "Student";
 
-  const profileImageUrl = useMemo(() => {
-    const path = user?.profileImage || "";
-    if (!path) return "";
-    if (/^https?:\/\//i.test(path)) return path;
-    if (path.startsWith("/")) return `${API_HOST}${path}`;
-    return `${API_HOST}/${path}`;
+  const profileImageUrl = useMemo(
+    () => buildProfileImageUrl(API_HOST, user?.profileImage),
+    [user?.profileImage]
+  );
+
+  useEffect(() => {
+    setAvatarBroken(false);
   }, [user?.profileImage]);
 
   const initials = useMemo(() => {
@@ -99,6 +104,84 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
     setBrowseOpen(false);
     navigate("/", { replace: true });
   };
+
+  /** Load latest profile (incl. profileImage) — GET returns nested `profile`, unlike flat `bs_user` from login. */
+  useEffect(() => {
+    if (!token) {
+      setFetchedProfileUser(null);
+      return;
+    }
+
+    const role = storageUser?.role;
+    if (role && role !== "student") {
+      setFetchedProfileUser(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const mergeStorageWithProfile = (profile) => {
+      const raw =
+        localStorage.getItem("bs_user") ||
+        sessionStorage.getItem("bs_user") ||
+        "{}";
+      let base = {};
+      try {
+        base = JSON.parse(raw);
+      } catch {
+        base = {};
+      }
+      const merged = {
+        ...base,
+        ...profile,
+        role: base.role || "student",
+        profileImage: profile.profileImage || base.profileImage || "",
+      };
+      if (localStorage.getItem("bs_token")) {
+        localStorage.setItem("bs_user", JSON.stringify(merged));
+      } else if (sessionStorage.getItem("bs_token")) {
+        sessionStorage.setItem("bs_user", JSON.stringify(merged));
+      }
+      return merged;
+    };
+
+    const run = async () => {
+      const urls = [
+        `${API_HOST}/api/v1/students/me/profile`,
+        `${API_HOST}/api/students/me/profile`,
+      ];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          });
+          if (res.status === 401) {
+            logout();
+            return;
+          }
+          if (!res.ok) continue;
+          const data = await safeJson(res);
+          const profile = data?.profile;
+          if (!profile || typeof profile !== "object" || cancelled) return;
+          if (profile.profileImage) setAvatarBroken(false);
+          const merged = mergeStorageWithProfile(profile);
+          setFetchedProfileUser(merged);
+          return;
+        } catch {
+          /* try next URL */
+        }
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: refetch when token / role changes only
+  }, [token, storageUser?.role]);
 
   // close menus on route change
   useEffect(() => {
@@ -512,23 +595,38 @@ const StudentNavbar = ({ user: userProp, onMenuToggle }) => {
         </div>
 
         <div className="tnav__profile" ref={profileRef}>
-          <button
-            type="button"
-            className="tnav__iconBtn"
-            onClick={() => setProfileOpen((v) => !v)}
-            aria-label="Open profile menu"
-            aria-expanded={profileOpen}
-          >
-            <span className="tnav__iconCircle" style={{ position: "relative" }}>
-              {profileImageUrl ? (
-                <img src={profileImageUrl} alt="Profile" className="tnav__avatarImg" />
-              ) : (
-                <span className="tnav__initials">{initials}</span>
-              )}
-              <span className="tnav__dot" title="Online" />
-            </span>
-            <span className={`tnav__caret ${profileOpen ? "rot" : ""}`}>▾</span>
-          </button>
+          <div className="tnav__profileRow">
+            <Link
+              to="/student/profile"
+              className="tnav__avatarLinkBtn"
+              aria-label="View profile details"
+              onClick={() => setProfileOpen(false)}
+            >
+              <span className="tnav__iconCircle" style={{ position: "relative" }}>
+                {profileImageUrl && !avatarBroken ? (
+                  <img
+                    src={profileImageUrl}
+                    alt=""
+                    className="tnav__avatarImg"
+                    onError={() => setAvatarBroken(true)}
+                  />
+                ) : (
+                  <span className="tnav__initials">{initials}</span>
+                )}
+                <span className="tnav__dot" title="Online" />
+              </span>
+            </Link>
+            <button
+              type="button"
+              className="tnav__caretOnlyBtn"
+              onClick={() => setProfileOpen((v) => !v)}
+              aria-label="Open account menu"
+              aria-expanded={profileOpen}
+              aria-haspopup="true"
+            >
+              <span className={`tnav__caret ${profileOpen ? "rot" : ""}`}>▾</span>
+            </button>
+          </div>
 
           {profileOpen && (
             <div className="tnav__menu">

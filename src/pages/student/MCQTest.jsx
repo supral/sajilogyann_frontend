@@ -445,15 +445,7 @@ export default function MCQTest() {
               >
                 Start
               </button>
-            ) : (
-              <button
-                className="sfv-btn sfv-btn-primary"
-                onClick={handleSubmit}
-                disabled={submitted}
-              >
-                {submitted ? "Submitted" : "Submit"}
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -651,6 +643,18 @@ export default function MCQTest() {
                   );
                 })}
               </div>
+
+              {started && !submitted ? (
+                <div className="sfv-submitBar">
+                  <button
+                    type="button"
+                    className="sfv-btn sfv-btn-primary sfv-submitBar-btn"
+                    onClick={handleSubmit}
+                  >
+                    Submit answers
+                  </button>
+                </div>
+              ) : null}
 
               {!started ? (
                 <div className="sfv-startHint">

@@ -1,13 +1,24 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import "../../styles/TeacherDashboard.css";
 import {
   teacherGetEnrolledStudents,
   teacherGetMyCourses,
 } from "../../services/api";
+import StudentAvatar from "../../components/teacher/StudentAvatar";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ENROLLED_STUDENTS_PAGE_SIZE = 10;
+
+const courseIdStr = (c) => {
+  if (!c?.courseId) return "";
+  if (typeof c.courseId === "object" && c.courseId._id != null) {
+    return String(c.courseId._id);
+  }
+  return String(c.courseId);
+};
 
 const EnrolledStudents = () => {
-  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +46,7 @@ const EnrolledStudents = () => {
       ]);
 
       setStudents(Array.isArray(studentsData?.students) ? studentsData.students : []);
-      
-      // Use courses from enrolled students if available, otherwise use from courses endpoint
+
       if (Array.isArray(studentsData?.courses) && studentsData.courses.length > 0) {
         setCourses(studentsData.courses);
       } else if (Array.isArray(coursesData?.courses)) {
@@ -56,9 +66,9 @@ const EnrolledStudents = () => {
     if (selectedCourse !== "all") {
       filtered = filtered.filter((s) =>
         s.courses.some((c) => {
-          const courseId = String(c.courseId || c._id || "");
+          const cid = courseIdStr(c);
           const selectedId = String(selectedCourse);
-          return courseId === selectedId;
+          return cid === selectedId;
         })
       );
     }
@@ -68,14 +78,25 @@ const EnrolledStudents = () => {
       filtered = filtered.filter(
         (s) =>
           (s.studentName || "").toLowerCase().includes(term) ||
-          s.courses.some((c) =>
-            (c.courseName || "").toLowerCase().includes(term)
-          )
+          s.courses.some((c) => (c.courseName || "").toLowerCase().includes(term))
       );
     }
 
     return filtered;
   }, [students, selectedCourse, searchTerm]);
+
+  const {
+    page: studentPage,
+    setPage: setStudentPage,
+    totalPages: studentTotalPages,
+    pageItems: pagedStudents,
+    total: studentListTotal,
+    from: studentFrom,
+    to: studentTo,
+  } = useListPagination(filteredStudents, {
+    pageSize: ENROLLED_STUDENTS_PAGE_SIZE,
+    resetDeps: [selectedCourse, searchTerm],
+  });
 
   const stats = useMemo(() => {
     return {
@@ -97,8 +118,27 @@ const EnrolledStudents = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
+      {!loading && !error && students.length > 0 && (
+        <p className="teacher-dashboard-metrics-line enrolled-metrics-line" aria-live="polite">
+          <span>
+            <strong>{stats.total}</strong> students
+          </span>
+          <span className="teacher-dashboard-metrics-sep" aria-hidden>
+            ·
+          </span>
+          <span>
+            <strong>{stats.active}</strong> active
+          </span>
+          <span className="teacher-dashboard-metrics-sep" aria-hidden>
+            ·
+          </span>
+          <span>
+            <strong>{stats.completed}</strong> with completed course(s)
+          </span>
+        </p>
+      )}
+
+      <div className="stats-grid stats-grid--kpi-row">
         <div className="stat-card stat-blue">
           <div className="stat-icon">
             <i className="fa-solid fa-users"></i>
@@ -130,7 +170,6 @@ const EnrolledStudents = () => {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="filters-bar">
         <div className="filter-group">
           <label>
@@ -162,17 +201,13 @@ const EnrolledStudents = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
-            <button
-              className="clear-search"
-              onClick={() => setSearchTerm("")}
-            >
+            <button className="clear-search" onClick={() => setSearchTerm("")}>
               <i className="fa-solid fa-times"></i>
             </button>
           )}
         </div>
       </div>
 
-      {/* Students Table */}
       {loading ? (
         <div className="loading-state">
           <i className="fa-solid fa-spinner fa-spin"></i>
@@ -186,7 +221,7 @@ const EnrolledStudents = () => {
             Retry
           </button>
         </div>
-      ) : filteredStudents.length === 0 ? (
+      ) : studentListTotal === 0 ? (
         <div className="empty-state">
           <i className="fa-solid fa-users"></i>
           <h3>No students found</h3>
@@ -198,6 +233,15 @@ const EnrolledStudents = () => {
         </div>
       ) : (
         <div className="students-table-container">
+          <ListPaginationBar
+            page={studentPage}
+            totalPages={studentTotalPages}
+            onPageChange={setStudentPage}
+            from={studentFrom}
+            to={studentTo}
+            total={studentListTotal}
+            flushTop
+          />
           <table className="students-table">
             <thead>
               <tr>
@@ -205,11 +249,10 @@ const EnrolledStudents = () => {
                 <th>Enrolled Courses</th>
                 <th>Progress</th>
                 <th>Completed</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.map((student) => {
+              {pagedStudents.map((student) => {
                 const avgProgress =
                   student.courses.length > 0
                     ? Math.round(student.totalProgress / student.courses.length)
@@ -219,9 +262,10 @@ const EnrolledStudents = () => {
                   <tr key={student.studentId}>
                     <td>
                       <div className="student-name-cell">
-                        <div className="student-avatar">
-                          {(student.studentName || "S")[0].toUpperCase()}
-                        </div>
+                        <StudentAvatar
+                          profileImage={student.profileImage}
+                          name={student.studentName}
+                        />
                         <span>{student.studentName}</span>
                       </div>
                     </td>
@@ -250,22 +294,19 @@ const EnrolledStudents = () => {
                         {student.completedCourses} / {student.courses.length}
                       </span>
                     </td>
-                    <td>
-                      <button
-                        className="btn-icon"
-                        onClick={() =>
-                          navigate(`/teacher/student/${student.studentId}`)
-                        }
-                        title="View Details"
-                      >
-                        <i className="fa-solid fa-eye"></i>
-                      </button>
-                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          <ListPaginationBar
+            page={studentPage}
+            totalPages={studentTotalPages}
+            onPageChange={setStudentPage}
+            from={studentFrom}
+            to={studentTo}
+            total={studentListTotal}
+          />
         </div>
       )}
     </div>

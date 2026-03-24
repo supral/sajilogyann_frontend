@@ -2,6 +2,10 @@
 import React, { useEffect, useState } from "react";
 import StudentPageLayout from "./StudentPageLayout";
 import { useNavigate } from "react-router-dom";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ASSIGNMENTS_PAGE_SIZE = 8;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api/v1", "/api"];
@@ -39,6 +43,16 @@ export default function Assignments() {
     fetchAssignments();
   }, []);
 
+  const {
+    page: assignPage,
+    setPage: setAssignPage,
+    totalPages: assignTotalPages,
+    pageItems: pagedAssignments,
+    total: assignListTotal,
+    from: assignFrom,
+    to: assignTo,
+  } = useListPagination(assignments, { pageSize: ASSIGNMENTS_PAGE_SIZE, resetDeps: [] });
+
   const getFileUrl = (file) => {
     if (!file?.path) return "";
     if (file.path.startsWith("http")) return file.path;
@@ -58,9 +72,17 @@ export default function Assignments() {
         </div>
       )}
 
-      {!loading && assignments.length > 0 && (
+      {!loading && assignListTotal > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {assignments.map((assignment) => (
+          <ListPaginationBar
+            page={assignPage}
+            totalPages={assignTotalPages}
+            onPageChange={setAssignPage}
+            from={assignFrom}
+            to={assignTo}
+            total={assignListTotal}
+          />
+          {pagedAssignments.map((assignment) => (
             <div
               key={assignment._id}
               style={{
@@ -161,6 +183,14 @@ export default function Assignments() {
               </div>
             </div>
           ))}
+          <ListPaginationBar
+            page={assignPage}
+            totalPages={assignTotalPages}
+            onPageChange={setAssignPage}
+            from={assignFrom}
+            to={assignTo}
+            total={assignListTotal}
+          />
         </div>
       )}
     </StudentPageLayout>

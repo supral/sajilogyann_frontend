@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import StudentNavbar from "./StudentNavbar";
 import Footer from "../../components/Footer";
+import { buildProfileImageUrl } from "../../utils/profileImageUrl.js";
 import "../../styles/dashboard.css";
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
@@ -23,6 +24,16 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 7000) {
     clearTimeout(id);
   }
 }
+
+const safeJson = async (res) => {
+  try {
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
 
 const safeText = (v) => {
   if (v === null || v === undefined) return "";
@@ -162,7 +173,20 @@ const StudentDashboard = () => {
   const [error, setError] = useState("");
   const [enrollingId, setEnrollingId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
+  const [dashboardProfileUser, setDashboardProfileUser] = useState(() => {
+    try {
+      const raw =
+        localStorage.getItem("bs_user") || sessionStorage.getItem("bs_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [profileDetailOpen, setProfileDetailOpen] = useState(false);
+  const [heroAvatarBroken, setHeroAvatarBroken] = useState(false);
+
   // Close sidebar on route change (mobile only - below 768px)
   useEffect(() => {
     if (window.innerWidth <= 768) {
@@ -186,6 +210,11 @@ const StudentDashboard = () => {
 
   // Sidebar menu items configuration
   const sidebarMenuItems = [
+    {
+      label: "Activity log",
+      icon: "fa-clock-rotate-left",
+      path: "/student/activity-log",
+    },
     { 
       label: "Enrolled Courses", 
       icon: "fa-book-open", 
@@ -225,6 +254,122 @@ const StudentDashboard = () => {
 
   const token =
     localStorage.getItem("bs_token") || sessionStorage.getItem("bs_token");
+
+  const studentDisplayName = (
+    dashboardProfileUser?.name ||
+    dashboardProfileUser?.fullName ||
+    ""
+  ).trim();
+
+  const heroProfileImageUrl = useMemo(
+    () => buildProfileImageUrl(API_HOST, dashboardProfileUser?.profileImage),
+    [dashboardProfileUser?.profileImage]
+  );
+
+  const heroInitials = useMemo(() => {
+    const n = (studentDisplayName || "S").trim();
+    const parts = n.split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] || "S";
+    const b = parts.length > 1 ? parts[1]?.[0] : "";
+    return (a + b).toUpperCase();
+  }, [studentDisplayName]);
+
+  useEffect(() => {
+    setHeroAvatarBroken(false);
+  }, [dashboardProfileUser?.profileImage]);
+
+  useEffect(() => {
+    if (!profileDetailOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setProfileDetailOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [profileDetailOpen]);
+
+  useEffect(() => {
+    if (!token) {
+      setDashboardProfileUser(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const mergeStorageWithProfile = (profile) => {
+      const raw =
+        localStorage.getItem("bs_user") ||
+        sessionStorage.getItem("bs_user") ||
+        "{}";
+      let base = {};
+      try {
+        base = JSON.parse(raw);
+      } catch {
+        base = {};
+      }
+      const merged = {
+        ...base,
+        ...profile,
+        role: base.role || "student",
+        profileImage: profile.profileImage || base.profileImage || "",
+      };
+      if (localStorage.getItem("bs_token")) {
+        localStorage.setItem("bs_user", JSON.stringify(merged));
+      } else if (sessionStorage.getItem("bs_token")) {
+        sessionStorage.setItem("bs_user", JSON.stringify(merged));
+      }
+      return merged;
+    };
+
+    const logoutSession = () => {
+      localStorage.removeItem("bs_token");
+      localStorage.removeItem("bs_user");
+      sessionStorage.removeItem("bs_token");
+      sessionStorage.removeItem("bs_user");
+      ["bs_role", "userRole", "role"].forEach((k) => {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+      });
+      navigate("/", { replace: true });
+    };
+
+    const run = async () => {
+      const urls = [
+        `${API_HOST}/api/v1/students/me/profile`,
+        `${API_HOST}/api/students/me/profile`,
+      ];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          });
+          if (res.status === 401) {
+            logoutSession();
+            return;
+          }
+          if (!res.ok) continue;
+          const data = await safeJson(res);
+          const profile = data?.profile;
+          if (!profile || typeof profile !== "object" || cancelled) return;
+          const merged = mergeStorageWithProfile(profile);
+          window.dispatchEvent(
+            new CustomEvent("bs-user-updated", { detail: merged })
+          );
+          setDashboardProfileUser(merged);
+          return;
+        } catch {
+          /* try next URL */
+        }
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, navigate]);
 
   const didFetchRef = useRef(false);
   const lastGoodCoursesRef = useRef([]);
@@ -437,7 +582,10 @@ const StudentDashboard = () => {
 
   return (
     <>
-      <StudentNavbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <StudentNavbar
+        user={dashboardProfileUser || undefined}
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
@@ -458,11 +606,34 @@ const StudentDashboard = () => {
         <div className="sd-container">
           {/* Top heading */}
           <div className="sd-hero">
-            <div>
-              <h2 className="sd-title">Welcome to Your Learning Dashboard</h2>
-              <p className="sd-subtitle">
-                Explore courses posted by teachers, track progress, and continue learning.
-              </p>
+            <div className="sd-hero-main">
+              <button
+                type="button"
+                className="dash-hero-avatar-btn"
+                onClick={() => setProfileDetailOpen(true)}
+                aria-label="View your profile details"
+              >
+                {heroProfileImageUrl && !heroAvatarBroken ? (
+                  <img
+                    src={heroProfileImageUrl}
+                    alt=""
+                    className="dash-hero-avatar-img"
+                    onError={() => setHeroAvatarBroken(true)}
+                  />
+                ) : (
+                  <span className="dash-hero-avatar-initials">{heroInitials}</span>
+                )}
+              </button>
+              <div className="sd-hero-copy">
+                <h2 className="sd-title">
+                  {studentDisplayName
+                    ? `Welcome back, ${studentDisplayName}`
+                    : "Welcome to Your Learning Dashboard"}
+                </h2>
+                <p className="sd-subtitle">
+                  Explore courses posted by teachers, track progress, and continue learning.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -514,32 +685,23 @@ const StudentDashboard = () => {
                 })}
               </ul>
 
-              {/* Enrolled Courses Section */}
+              {/* Enrolled Courses Section — same theme as .sd-sideList li */}
               {enrolledCourses.length > 0 && (
-                <div style={{ 
-                  marginTop: "2rem", 
-                  paddingTop: "1.5rem", 
-                  borderTop: "1px solid rgba(255, 255, 255, 0.1)" 
-                }}>
-                  <div style={{ 
-                    padding: "0 1rem 0.75rem", 
-                    fontSize: "0.875rem", 
-                    fontWeight: "600", 
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em"
-                  }}>
-                    Enrolled Courses
-                  </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                <div className="sd-sideSection">
+                  <div className="sd-sideSectionTitle">Enrolled Courses</div>
+                  <ul className="sd-sideEnrolledList">
                     {enrolledCourses.map((course) => {
                       const courseId = course?._id || course?.courseId || course?.id;
-                      const courseTitle = course?.title || course?.courseName || course?.name || "Untitled Course";
-                      const isActiveCourse = location.pathname === `/student/course/${courseId}`;
-                      
+                      const courseTitle =
+                        course?.title || course?.courseName || course?.name || "Untitled Course";
+                      const isActiveCourse =
+                        location.pathname === `/student/course/${courseId}` ||
+                        location.pathname.startsWith(`/student/course/${courseId}/`);
+
                       return (
                         <li
                           key={courseId}
+                          className={`sd-sideEnrolledItem${isActiveCourse ? " active" : ""}`}
                           onClick={() => {
                             navigate(`/student/course/${courseId}`);
                             if (window.innerWidth <= 768) {
@@ -557,71 +719,20 @@ const StudentDashboard = () => {
                               }
                             }
                           }}
-                          style={{
-                            padding: "0.5rem 1rem",
-                            cursor: "pointer",
-                            fontSize: "0.875rem",
-                            color: isActiveCourse ? "#3b82f6" : "#64748b",
-                            backgroundColor: isActiveCourse ? "rgba(59, 130, 246, 0.1)" : "transparent",
-                            borderLeft: isActiveCourse ? "3px solid #3b82f6" : "3px solid transparent",
-                            transition: "all 0.2s ease",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem"
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isActiveCourse) {
-                              e.currentTarget.style.backgroundColor = "rgba(59, 130, 246, 0.05)";
-                              e.currentTarget.style.color = "#3b82f6";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActiveCourse) {
-                              e.currentTarget.style.backgroundColor = "transparent";
-                              e.currentTarget.style.color = "#64748b";
-                            }
-                          }}
                         >
-                          <i className="fa-solid fa-book" style={{ fontSize: "0.75rem" }}></i>
-                          <span style={{ 
-                            overflow: "hidden", 
-                            textOverflow: "ellipsis", 
-                            whiteSpace: "nowrap",
-                            flex: 1
-                          }}>
-                            {courseTitle}
-                          </span>
+                          <i className="fa-solid fa-book sd-sideEnrolledIcon" aria-hidden />
+                          <span className="sd-sideEnrolledTitle">{courseTitle}</span>
                         </li>
                       );
                     })}
                   </ul>
                 </div>
               )}
-              
+
               {enrolledCourses.length === 0 && !firstLoading && (
-                <div style={{ 
-                  marginTop: "2rem", 
-                  paddingTop: "1.5rem", 
-                  borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-                  padding: "0 1rem"
-                }}>
-                  <div style={{ 
-                    fontSize: "0.875rem", 
-                    fontWeight: "600", 
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    marginBottom: "0.75rem"
-                  }}>
-                    Enrolled Courses
-                  </div>
-                  <div style={{ 
-                    fontSize: "0.75rem", 
-                    color: "#94a3b8",
-                    fontStyle: "italic"
-                  }}>
-                    No enrolled courses yet
-                  </div>
+                <div className="sd-sideSection">
+                  <div className="sd-sideSectionTitle">Enrolled Courses</div>
+                  <p className="sd-sideSectionEmpty">No enrolled courses yet</p>
                 </div>
               )}
             </aside>
@@ -902,6 +1013,76 @@ const StudentDashboard = () => {
           </div>
         </div>
       </section>
+
+      {profileDetailOpen && (
+        <div
+          className="dash-profile-modal-overlay"
+          role="presentation"
+          onClick={() => setProfileDetailOpen(false)}
+        >
+          <div
+            className="dash-profile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dash-student-profile-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="dash-profile-modal-close"
+              aria-label="Close"
+              onClick={() => setProfileDetailOpen(false)}
+            >
+              ×
+            </button>
+            <div className="dash-profile-modal-avatar-wrap">
+              {heroProfileImageUrl && !heroAvatarBroken ? (
+                <img
+                  src={heroProfileImageUrl}
+                  alt=""
+                  className="dash-profile-modal-avatar"
+                  onError={() => setHeroAvatarBroken(true)}
+                />
+              ) : (
+                <span className="dash-profile-modal-avatar dash-profile-modal-avatar--initials">
+                  {heroInitials}
+                </span>
+              )}
+            </div>
+            <h2 id="dash-student-profile-title" className="dash-profile-modal-title">
+              Your details
+            </h2>
+            <dl className="dash-profile-modal-dl">
+              <div>
+                <dt>Name</dt>
+                <dd>{studentDisplayName || "—"}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{safeText(dashboardProfileUser?.email) || "—"}</dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd>{safeText(dashboardProfileUser?.phone) || "—"}</dd>
+              </div>
+              <div>
+                <dt>Role</dt>
+                <dd>Student</dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              className="dash-profile-modal-primary"
+              onClick={() => {
+                setProfileDetailOpen(false);
+                navigate("/student/profile");
+              }}
+            >
+              Open full profile
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>

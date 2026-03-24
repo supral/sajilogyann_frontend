@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import "../../styles/CreateCourse.css";
 import { useNavigate } from "react-router-dom";
 import TeacherSidebar from "./TeacherSidebar";
@@ -94,6 +94,8 @@ async function apiRequest(path, { method = "GET", body, requireAuth = true } = {
   throw err;
 }
 
+const COURSES_PAGE_SIZE = 10;
+
 const CreateCourse = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("create-course");
@@ -116,6 +118,10 @@ const CreateCourse = () => {
   });
 
   const [saving, setSaving] = useState(false);
+
+  const [myCourses, setMyCourses] = useState([]);
+  const [loadingMyCourses, setLoadingMyCourses] = useState(false);
+  const [coursesPage, setCoursesPage] = useState(1);
 
   const [dialog, setDialog] = useState({
     open: false,
@@ -198,6 +204,42 @@ const CreateCourse = () => {
     // eslint-disable-next-line
   }, []);
 
+  const loadMyCourses = useCallback(async () => {
+    setLoadingMyCourses(true);
+    try {
+      const data = await apiRequest("/teacher/courses", { method: "GET" });
+      const list = Array.isArray(data?.courses)
+        ? data.courses
+        : Array.isArray(data)
+        ? data
+        : [];
+      setMyCourses(list);
+    } catch (err) {
+      console.error("Failed to load teacher courses:", err);
+      setMyCourses([]);
+    } finally {
+      setLoadingMyCourses(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMyCourses();
+  }, [loadMyCourses]);
+
+  const coursesTotalPages = Math.max(
+    1,
+    Math.ceil(myCourses.length / COURSES_PAGE_SIZE)
+  );
+  const coursesPageSafe = Math.min(coursesPage, coursesTotalPages);
+  const pagedCourses = myCourses.slice(
+    (coursesPageSafe - 1) * COURSES_PAGE_SIZE,
+    coursesPageSafe * COURSES_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    if (coursesPage > coursesTotalPages) setCoursesPage(coursesTotalPages);
+  }, [coursesPage, coursesTotalPages]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") closeDialog();
@@ -236,11 +278,8 @@ const CreateCourse = () => {
 
       setFormData({ title: "", description: "", category: "", duration: "" });
       openDialog("success", "✅ Course created successfully!");
-      
-      // Redirect to view courses page after successful creation
-      setTimeout(() => {
-        navigate("/view-courses");
-      }, 1000);
+      setCoursesPage(1);
+      loadMyCourses();
     } catch (err) {
       if (err?.status === 401) {
         localStorage.removeItem("bs_token");
@@ -576,6 +615,108 @@ const CreateCourse = () => {
                 {saving ? "Creating..." : "Create Course"}
               </button>
             </form>
+          </div>
+
+          <div className="create-course-coursesPanel">
+            <div className="create-course-coursesPanel__head">
+              <div>
+                <h3>Your courses</h3>
+                <p className="create-course-coursesPanel__sub">
+                  {myCourses.length} total · {COURSES_PAGE_SIZE} per page · click a row to open details
+                </p>
+              </div>
+              <button
+                type="button"
+                className="submit-btn create-course-coursesPanel__refresh"
+                onClick={loadMyCourses}
+                disabled={loadingMyCourses}
+              >
+                {loadingMyCourses ? "Loading…" : "Refresh list"}
+              </button>
+            </div>
+
+            {loadingMyCourses && myCourses.length === 0 ? (
+              <p className="create-course-coursesPanel__empty">Loading your courses…</p>
+            ) : myCourses.length === 0 ? (
+              <p className="create-course-coursesPanel__empty">
+                No courses yet. Create one above — it will appear here.
+              </p>
+            ) : (
+              <>
+                <div className="create-course-tableWrap">
+                  <table className="create-course-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Duration</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedCourses.map((course) => {
+                        const courseId = course._id || course.id;
+                        if (!courseId) return null;
+                        return (
+                          <tr
+                            key={courseId}
+                            className="create-course-table__row"
+                            onClick={() => navigate(`/course-detail/${courseId}`)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                navigate(`/course-detail/${courseId}`);
+                              }
+                            }}
+                          >
+                            <td className="create-course-table__title">
+                              {course.title || "Untitled"}
+                            </td>
+                            <td>{course.category || "—"}</td>
+                            <td>{course.duration ?? "—"}</td>
+                            <td className="create-course-table__muted">
+                              {course.createdAt
+                                ? new Date(course.createdAt).toLocaleDateString()
+                                : "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {coursesTotalPages > 1 && (
+                  <div className="create-course-pagination">
+                    <button
+                      type="button"
+                      className="create-course-pagination__btn"
+                      disabled={coursesPageSafe <= 1}
+                      onClick={() => setCoursesPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </button>
+                    <span className="create-course-pagination__info">
+                      Page {coursesPageSafe} of {coursesTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="create-course-pagination__btn"
+                      disabled={coursesPageSafe >= coursesTotalPages}
+                      onClick={() =>
+                        setCoursesPage((p) =>
+                          Math.min(coursesTotalPages, p + 1)
+                        )
+                      }
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </main>
       </div>

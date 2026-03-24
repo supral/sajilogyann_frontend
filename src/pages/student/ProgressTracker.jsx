@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
 import StudentPageLayout from "./StudentPageLayout";
 import { useNavigate } from "react-router-dom";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const PROGRESS_PAGE_SIZE = 6;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api/v1", "/api"];
@@ -59,6 +63,16 @@ export default function ProgressTracker() {
       overallCompletion,
     };
   }, [courses]);
+
+  const {
+    page: progressPage,
+    setPage: setProgressPage,
+    totalPages: progressTotalPages,
+    pageItems: pagedCourses,
+    total: progressListTotal,
+    from: progressFrom,
+    to: progressTo,
+  } = useListPagination(courses, { pageSize: PROGRESS_PAGE_SIZE, resetDeps: [] });
 
   const getProgressColor = (percent) => {
     if (percent >= 80) return "#4caf50"; // Green
@@ -217,8 +231,16 @@ export default function ProgressTracker() {
             <h2 style={{ margin: "0 0 1rem 0", color: "#333" }}>Course Progress</h2>
           </div>
 
+          <ListPaginationBar
+            page={progressPage}
+            totalPages={progressTotalPages}
+            onPageChange={setProgressPage}
+            from={progressFrom}
+            to={progressTo}
+            total={progressListTotal}
+          />
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {courses.map((course) => (
+            {pagedCourses.map((course) => (
               <div
                 key={course._id || course.courseId}
                 style={{
@@ -327,6 +349,14 @@ export default function ProgressTracker() {
               </div>
             ))}
           </div>
+          <ListPaginationBar
+            page={progressPage}
+            totalPages={progressTotalPages}
+            onPageChange={setProgressPage}
+            from={progressFrom}
+            to={progressTo}
+            total={progressListTotal}
+          />
         </>
       )}
     </StudentPageLayout>

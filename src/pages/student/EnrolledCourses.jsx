@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import StudentPageLayout from "./StudentPageLayout";
 import { useNavigate } from "react-router-dom";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ENROLLED_COURSES_PAGE_SIZE = 9;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const ENROLLED_COURSES_ENDPOINTS = [
@@ -30,6 +34,16 @@ export default function EnrolledCourses() {
   const [refreshing, setRefreshing] = useState(false);
   const [archivingId, setArchivingId] = useState(null);
   const navigate = useNavigate();
+
+  const {
+    page: ecPage,
+    setPage: setEcPage,
+    totalPages: ecTotalPages,
+    pageItems: pagedCourses,
+    total: ecListTotal,
+    from: ecFrom,
+    to: ecTo,
+  } = useListPagination(courses, { pageSize: ENROLLED_COURSES_PAGE_SIZE, resetDeps: [] });
 
   const fetchCourses = async (isRefresh = false) => {
     if (isRefresh) {
@@ -340,7 +354,16 @@ export default function EnrolledCourses() {
       )}
 
       {/* Courses grid */}
-      {!loading && !error && courses.length > 0 && (
+      {!loading && !error && ecListTotal > 0 && (
+        <div>
+          <ListPaginationBar
+            page={ecPage}
+            totalPages={ecTotalPages}
+            onPageChange={setEcPage}
+            from={ecFrom}
+            to={ecTo}
+            total={ecListTotal}
+          />
         <div
           style={{
             display: "grid",
@@ -348,7 +371,7 @@ export default function EnrolledCourses() {
             gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
           }}
         >
-          {courses.map((course) => {
+          {pagedCourses.map((course) => {
             const progressPercent = course.progress?.progressPercent || course.progress?.progress || 0;
             const status = course.progress?.status || "Not Started";
             const passedLessons = course.progress?.passedLessons || 0;
@@ -606,6 +629,15 @@ export default function EnrolledCourses() {
               </div>
             );
           })}
+        </div>
+        <ListPaginationBar
+          page={ecPage}
+          totalPages={ecTotalPages}
+          onPageChange={setEcPage}
+          from={ecFrom}
+          to={ecTo}
+          total={ecListTotal}
+        />
         </div>
       )}
     </StudentPageLayout>

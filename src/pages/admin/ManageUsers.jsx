@@ -4,6 +4,11 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import AdminSidebar from "./AdminSidebar";
 import "../../styles/admin.css";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import AdminPersonAvatar from "../../components/AdminPersonAvatar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ADMIN_USERS_PAGE_SIZE = 12;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api", "/api/v1"];
@@ -119,6 +124,19 @@ export default function ManageUsers() {
       return name.includes(s) || email.includes(s);
     });
   }, [q, users]);
+
+  const {
+    page: userPage,
+    setPage: setUserPage,
+    totalPages: userTotalPages,
+    pageItems: pagedUsers,
+    total: userListTotal,
+    from: userFrom,
+    to: userTo,
+  } = useListPagination(filtered, {
+    pageSize: ADMIN_USERS_PAGE_SIZE,
+    resetDeps: [q],
+  });
 
   const openEdit = (u) => {
     setEditing(u);
@@ -247,11 +265,29 @@ export default function ManageUsers() {
               }}
             />
 
+            <ListPaginationBar
+              page={userPage}
+              totalPages={userTotalPages}
+              onPageChange={setUserPage}
+              from={userFrom}
+              to={userTo}
+              total={userListTotal}
+            />
             <div style={{ marginTop: 14, overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
                 <thead>
                   <tr style={{ background: "#0b57ff", color: "#fff" }}>
-                    <th style={{ textAlign: "left", padding: 14, borderTopLeftRadius: 10 }}>NAME</th>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: 14,
+                        borderTopLeftRadius: 10,
+                        width: 72,
+                      }}
+                    >
+                      PHOTO
+                    </th>
+                    <th style={{ textAlign: "left", padding: 14 }}>NAME</th>
                     <th style={{ textAlign: "left", padding: 14 }}>EMAIL</th>
                     <th style={{ textAlign: "left", padding: 14 }}>ROLE</th>
                     <th style={{ textAlign: "left", padding: 14, borderTopRightRadius: 10 }}>ACTION</th>
@@ -261,15 +297,16 @@ export default function ManageUsers() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={4} style={{ padding: 16 }}>Loading students…</td>
+                      <td colSpan={5} style={{ padding: 16 }}>Loading students…</td>
                     </tr>
-                  ) : filtered.length === 0 ? (
+                  ) : userListTotal === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ padding: 16 }}>No students found.</td>
+                      <td colSpan={5} style={{ padding: 16 }}>No students found.</td>
                     </tr>
                   ) : (
-                    filtered.map((u) => {
+                    pagedUsers.map((u) => {
                       const id = u._id || u.id;
+                      const displayName = u.name || u.fullName || "-";
                       return (
                         <tr
                           key={id}
@@ -280,7 +317,15 @@ export default function ManageUsers() {
                           onClick={() => goDetail(u)}
                           title="Click to view details"
                         >
-                          <td style={{ padding: 16 }}>{u.name || u.fullName || "-"}</td>
+                          <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>
+                            <AdminPersonAvatar
+                              profileImage={u.profileImage}
+                              name={displayName}
+                              size={44}
+                              title={displayName}
+                            />
+                          </td>
+                          <td style={{ padding: 16 }}>{displayName}</td>
                           <td style={{ padding: 16 }}>{u.email || "-"}</td>
                           <td style={{ padding: 16, textTransform: "capitalize" }}>
                             {normalizeRole(u.role || "student")}
@@ -310,6 +355,16 @@ export default function ManageUsers() {
                 </tbody>
               </table>
             </div>
+            {!loading && userListTotal > 0 ? (
+              <ListPaginationBar
+                page={userPage}
+                totalPages={userTotalPages}
+                onPageChange={setUserPage}
+                from={userFrom}
+                to={userTo}
+                total={userListTotal}
+              />
+            ) : null}
 
             <p style={{ marginTop: 12, opacity: 0.7 }}>
               Showing only users where <b>role = student</b>.

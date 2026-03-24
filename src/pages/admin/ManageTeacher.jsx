@@ -4,6 +4,11 @@ import Navbar from "../../components/Navbar";
 import AdminSidebar from "./AdminSidebar";
 
 import "../../styles/admin.css";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import AdminPersonAvatar from "../../components/AdminPersonAvatar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ADMIN_TEACHER_PAGE_SIZE = 12;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_BASE_URL = `${API_HOST}/api`;
@@ -150,6 +155,19 @@ const ManageTeacher = () => {
       );
     });
   }, [teachers, search]);
+
+  const {
+    page: teacherPage,
+    setPage: setTeacherPage,
+    totalPages: teacherTotalPages,
+    pageItems: pagedTeachers,
+    total: teacherListTotal,
+    from: teacherFrom,
+    to: teacherTo,
+  } = useListPagination(filtered, {
+    pageSize: ADMIN_TEACHER_PAGE_SIZE,
+    resetDeps: [search],
+  });
 
   // ✅ Sidebar routing for shared sidebar
   const handleMenuClick = (secId) => {
@@ -353,9 +371,19 @@ const ManageTeacher = () => {
           {loading ? (
             <p style={{ marginTop: 12 }}>Loading teachers...</p>
           ) : (
+            <>
+            <ListPaginationBar
+              page={teacherPage}
+              totalPages={teacherTotalPages}
+              onPageChange={setTeacherPage}
+              from={teacherFrom}
+              to={teacherTo}
+              total={teacherListTotal}
+            />
             <table className="user-table">
               <thead>
                 <tr>
+                  <th style={{ width: 72 }}>PHOTO</th>
                   <th>FULL NAME</th>
                   <th>EMAIL</th>
                   <th>DEPARTMENT</th>
@@ -365,9 +393,17 @@ const ManageTeacher = () => {
               </thead>
 
               <tbody>
-                {filtered.length ? (
-                  filtered.map((t) => (
+                {teacherListTotal ? (
+                  pagedTeachers.map((t) => (
                     <tr key={t._id}>
+                      <td style={{ verticalAlign: "middle" }}>
+                        <AdminPersonAvatar
+                          profileImage={t.profileImage}
+                          name={t.name || t.email || "-"}
+                          size={44}
+                          title={t.name || t.email || ""}
+                        />
+                      </td>
                       <td>{t.name || "-"}</td>
                       <td>{t.email || "-"}</td>
                       <td>{t.department || t.dept || "-"}</td>
@@ -384,13 +420,24 @@ const ManageTeacher = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" style={{ textAlign: "center", padding: "1rem" }}>
+                    <td colSpan="6" style={{ textAlign: "center", padding: "1rem" }}>
                       No teachers found
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            {teacherListTotal > 0 ? (
+              <ListPaginationBar
+                page={teacherPage}
+                totalPages={teacherTotalPages}
+                onPageChange={setTeacherPage}
+                from={teacherFrom}
+                to={teacherTo}
+                total={teacherListTotal}
+              />
+            ) : null}
+            </>
           )}
         </main>
       </div>

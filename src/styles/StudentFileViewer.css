@@ -255,6 +255,24 @@
     font-weight: 900;
   }
   
+  .sfv-submitBar {
+    margin-top: 1.5rem;
+    padding: 1.25rem 1rem 1.5rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.6) 0%, #fff 40%);
+  }
+
+  .sfv-submitBar-btn {
+    min-width: 220px;
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
   .sfv-startHint {
     margin-top: 12px;
     padding: 10px 12px;
@@ -304,6 +322,16 @@
 
   .sfv-download {
     padding: 12px;
+  }
+
+  .sfv-submitBar {
+    padding: 1rem 0;
+  }
+
+  .sfv-submitBar-btn {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .sfv-qTitle {

@@ -30,6 +30,7 @@ const AdminSidebar = ({
       { path: "/admin/quizzes", id: "quiz" },
       { path: "/admin/casestudies", id: "case" },
       { path: "/admin/analytics", id: "analytics" },
+      { path: "/admin/activity-log", id: "activity" },
       { path: "/admin/settings", id: "settings" }, // ✅ settings route
     ],
     []
@@ -56,6 +57,7 @@ const AdminSidebar = ({
     { id: "quiz", name: "Quiz Management", icon: "🧩", route: "/admin/quizzes" },
     { id: "case", name: "Case Studies", icon: "🧠", route: "/admin/casestudies" },
     { id: "analytics", name: "Analytics & Reports", icon: "📈", route: "/admin/analytics" },
+    { id: "activity", name: "Activity log", icon: "🕘", route: "/admin/activity-log" },
     { id: "settings", name: "Settings", icon: "⚙️", route: "/admin/settings" }, // ✅ only once
   ];
 
@@ -88,7 +90,12 @@ const AdminSidebar = ({
             onClick={() => handleMenuClick(sec)}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === "Enter" && handleMenuClick(sec)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleMenuClick(sec);
+              }
+            }}
           >
             <span className="icon">{sec.icon}</span> {sec.name}
           </li>

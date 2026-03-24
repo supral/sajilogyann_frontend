@@ -26,6 +26,10 @@ import {
   teacherGetAnalytics,
   teacherGetMyCourses,
 } from "../../services/api";
+import { buildProfileImageUrl } from "../../utils/profileImageUrl.js";
+
+const API_BASE =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
@@ -50,6 +54,63 @@ const TeacherDashboard = () => {
     }
   }, []);
 
+  /** Hero + prop refresh when NavbarAfterLogin syncs profile from API */
+  const [dashboardUser, setDashboardUser] = useState(() => {
+    try {
+      const raw =
+        localStorage.getItem("bs_user") || sessionStorage.getItem("bs_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const onUser = (e) => {
+      const d = e?.detail;
+      if (d && typeof d === "object" && d.role === "teacher") {
+        setDashboardUser(d);
+      }
+    };
+    window.addEventListener("bs-user-updated", onUser);
+    return () => window.removeEventListener("bs-user-updated", onUser);
+  }, []);
+
+  const teacherDisplayName = (
+    dashboardUser?.name ||
+    dashboardUser?.fullName ||
+    ""
+  ).trim();
+
+  const [profileDetailOpen, setProfileDetailOpen] = useState(false);
+  const [heroAvatarBroken, setHeroAvatarBroken] = useState(false);
+
+  const heroProfileImageUrl = useMemo(
+    () => buildProfileImageUrl(API_BASE, dashboardUser?.profileImage),
+    [dashboardUser?.profileImage]
+  );
+
+  const heroInitials = useMemo(() => {
+    const n = (teacherDisplayName || "T").trim();
+    const parts = n.split(/\s+/).filter(Boolean);
+    const a = parts[0]?.[0] || "T";
+    const b = parts.length > 1 ? parts[1]?.[0] : "";
+    return (a + b).toUpperCase();
+  }, [teacherDisplayName]);
+
+  useEffect(() => {
+    setHeroAvatarBroken(false);
+  }, [dashboardUser?.profileImage]);
+
+  useEffect(() => {
+    if (!profileDetailOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setProfileDetailOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [profileDetailOpen]);
+
   // Determine active tab from route
   useEffect(() => {
     const path = location.pathname;
@@ -57,7 +118,9 @@ const TeacherDashboard = () => {
     else if (path === "/create-course") setActiveTab("create-course");
     else if (path === "/view-courses") setActiveTab("view-courses");
     else if (path === "/teacher/enrolled-students") setActiveTab("enrolled-students");
+    else if (path.startsWith("/teacher/student/")) setActiveTab("enrolled-students");
     else if (path === "/teacher/mcq-attempts") setActiveTab("mcq-attempts");
+    else if (path === "/teacher/activity-log") setActiveTab("activity-log");
     else if (path === "/teacher/analytics") setActiveTab("analytics");
     else if (path === "/reports") setActiveTab("reports");
   }, [location.pathname]);
@@ -99,6 +162,13 @@ const TeacherDashboard = () => {
     }
   }, [token, user, navigate]);
 
+  /** Unique learners (matches Enrolled Students list). MCQ total from analytics (all attempts, not capped). */
+  const dashboardCounts = useMemo(() => {
+    const enrolled = Array.isArray(enrolledStudents) ? enrolledStudents.length : 0;
+    const mcq = Math.max(0, Math.floor(Number(analytics?.totalAttempts ?? 0)));
+    return { enrolled, mcq };
+  }, [enrolledStudents, analytics]);
+
   // Ensure sidebar is always visible on desktop/tablet (above 768px)
   useEffect(() => {
     const handleResize = () => {
@@ -115,7 +185,10 @@ const TeacherDashboard = () => {
 
   return (
     <div className="teacher-dashboard-layout">
-      <NavbarAfterLogin user={user} onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <NavbarAfterLogin
+        user={dashboardUser}
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       {/* Hamburger Button Bar - Below Navbar */}
       <div className="hamburger-bar">
@@ -152,9 +225,34 @@ const TeacherDashboard = () => {
           {activeTab === "dashboard" && (
             <>
               <div className="teacher-hero">
-                <div>
-                  <h3>Teacher Dashboard</h3>
-                  <p>Overview of your courses and enrolled students.</p>
+                <div className="teacher-heroLeft">
+                  <button
+                    type="button"
+                    className="dash-hero-avatar-btn teacher-hero-avatar"
+                    onClick={() => setProfileDetailOpen(true)}
+                    aria-label="View your profile details"
+                  >
+                    {heroProfileImageUrl && !heroAvatarBroken ? (
+                      <img
+                        src={heroProfileImageUrl}
+                        alt=""
+                        className="dash-hero-avatar-img"
+                        onError={() => setHeroAvatarBroken(true)}
+                      />
+                    ) : (
+                      <span className="dash-hero-avatar-initials">
+                        {heroInitials}
+                      </span>
+                    )}
+                  </button>
+                  <div className="teacher-heroText">
+                    <h3>Teacher Dashboard</h3>
+                    <p>
+                      {teacherDisplayName
+                        ? `Welcome back, ${teacherDisplayName}. Overview of your courses and enrolled students.`
+                        : "Overview of your courses and enrolled students."}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="teacher-heroRight">
@@ -171,6 +269,18 @@ const TeacherDashboard = () => {
                 </div>
               ) : (
                 <>
+                  <p className="teacher-dashboard-metrics-line" aria-live="polite">
+                    <span>
+                      <strong>{dashboardCounts.enrolled}</strong> enrolled students
+                    </span>
+                    <span className="teacher-dashboard-metrics-sep" aria-hidden>
+                      ·
+                    </span>
+                    <span>
+                      <strong>{dashboardCounts.mcq}</strong> MCQ attempts
+                    </span>
+                  </p>
+
                   {/* Statistics Cards */}
                   <div className="teacher-stats-grid">
                     <div className="teacher-stat-card">
@@ -178,7 +288,7 @@ const TeacherDashboard = () => {
                         <i className="fa-solid fa-user-graduate" />
                       </div>
                       <div className="stat-content">
-                        <h3>{analytics?.totalStudents || enrolledStudents.length || 0}</h3>
+                        <h3>{dashboardCounts.enrolled}</h3>
                         <p>Total Students</p>
                       </div>
                     </div>
@@ -198,7 +308,7 @@ const TeacherDashboard = () => {
                         <i className="fa-solid fa-list-check" />
                       </div>
                       <div className="stat-content">
-                        <h3>{analytics?.totalAttempts || 0}</h3>
+                        <h3>{dashboardCounts.mcq}</h3>
                         <p>MCQ Attempts</p>
                       </div>
                     </div>
@@ -215,7 +325,7 @@ const TeacherDashboard = () => {
                   </div>
 
                   {/* Quick access – main system areas */}
-                  <div className="teacher-dashboard-section">
+                  <div className="teacher-dashboard-section teacher-dashboard-section--quick">
                     <div className="section-header">
                       <div>
                         <h3>Quick access</h3>
@@ -491,6 +601,86 @@ const TeacherDashboard = () => {
           )}
         </main>
       </div>
+
+      {profileDetailOpen && (
+        <div
+          className="dash-profile-modal-overlay"
+          role="presentation"
+          onClick={() => setProfileDetailOpen(false)}
+        >
+          <div
+            className="dash-profile-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dash-teacher-profile-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="dash-profile-modal-close"
+              aria-label="Close"
+              onClick={() => setProfileDetailOpen(false)}
+            >
+              ×
+            </button>
+            <div className="dash-profile-modal-avatar-wrap">
+              {heroProfileImageUrl && !heroAvatarBroken ? (
+                <img
+                  src={heroProfileImageUrl}
+                  alt=""
+                  className="dash-profile-modal-avatar"
+                  onError={() => setHeroAvatarBroken(true)}
+                />
+              ) : (
+                <span className="dash-profile-modal-avatar dash-profile-modal-avatar--initials">
+                  {heroInitials}
+                </span>
+              )}
+            </div>
+            <h2 id="dash-teacher-profile-title" className="dash-profile-modal-title">
+              Your details
+            </h2>
+            <dl className="dash-profile-modal-dl">
+              <div>
+                <dt>Name</dt>
+                <dd>{teacherDisplayName || "—"}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>
+                  {String(dashboardUser?.email || "").trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Phone</dt>
+                <dd>
+                  {String(dashboardUser?.phone || "").trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Department</dt>
+                <dd>
+                  {String(dashboardUser?.department || "").trim() || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Role</dt>
+                <dd>Teacher</dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              className="dash-profile-modal-primary"
+              onClick={() => {
+                setProfileDetailOpen(false);
+                navigate("/teacher/profile");
+              }}
+            >
+              Open full profile
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

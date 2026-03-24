@@ -35,17 +35,6 @@ const Footer = () => {
               <p className="hiring">
                 Join our team: <span>We are Hiring!</span>
               </p>
-
-              <div className="social">
-                <span>Follow us</span>
-                <div className="icons">
-                  <i className="fa-brands fa-facebook-f" />
-                  <i className="fa-brands fa-x-twitter" />
-                  <i className="fa-brands fa-instagram" />
-                  <i className="fa-brands fa-youtube" />
-                  <i className="fa-brands fa-linkedin-in" />
-                </div>
-              </div>
             </div>
 
             {/* LINKS */}

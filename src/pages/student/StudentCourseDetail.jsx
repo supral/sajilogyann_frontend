@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import StudentNavbar from "./StudentNavbar";
 import Footer from "../../components/Footer";
 import OfficeFileViewer from "../../components/OfficeFileViewer";
+import PDFViewer from "../../components/PDFViewer";
 import "../../styles/dashboard.css";
 import "../../styles/StudentLessonViewer.css";
 
@@ -73,6 +74,7 @@ const normalizeFileMeta = (meta) => {
     path: path || meta?.path || "",
     url,
     displayName: fileName(meta),
+    mimeType: meta?.mimeType || meta?.mimetype || "",
   };
 };
 
@@ -146,6 +148,8 @@ export default function StudentCourseDetail() {
   const [showPostContentOptions, setShowPostContentOptions] = useState(false);
   const [selectedPostContent, setSelectedPostContent] = useState(null); // "caseStudy" or "mcq"
   const videoRef = useRef(null);
+  const [lessonPdfPage, setLessonPdfPage] = useState(1);
+  const [lessonPdfNumPages, setLessonPdfNumPages] = useState(null);
 
   const headers = useMemo(() => {
     const token = getToken();
@@ -260,17 +264,23 @@ export default function StudentCourseDetail() {
     [activeLesson, course]
   );
 
-  const materials = Array.isArray(content?.materials) ? content.materials : [];
-  const taskFiles = Array.isArray(content?.taskFiles) ? content.taskFiles : [];
+  const materials = useMemo(
+    () => (Array.isArray(content?.materials) ? content.materials : []),
+    [content]
+  );
+  const taskFiles = useMemo(
+    () => (Array.isArray(content?.taskFiles) ? content.taskFiles : []),
+    [content]
+  );
 
   const notesText =
     content?.notesText || content?.notes?.text || content?.notes?.note || "";
 
-  const notesFiles = Array.isArray(content?.notesFiles)
-    ? content.notesFiles
-    : Array.isArray(content?.notes?.files)
-    ? content.notes.files
-    : [];
+  const notesFiles = useMemo(() => {
+    if (Array.isArray(content?.notesFiles)) return content.notesFiles;
+    if (Array.isArray(content?.notes?.files)) return content.notes.files;
+    return [];
+  }, [content]);
 
   const mcqs = Array.isArray(content?.mcqs) ? content.mcqs : [];
 
@@ -339,7 +349,6 @@ export default function StudentCourseDetail() {
     }
     
     return files;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- materials/notesFiles/taskFiles derived from content
   }, [videoFile, materials, notesFiles, taskFiles, caseStudyFile]);
 
   // Get current content to display - MUST be defined before useEffects that use it
@@ -348,35 +357,6 @@ export default function StudentCourseDetail() {
     if (currentContentIndex >= allFiles.length) return allFiles[allFiles.length - 1];
     return allFiles[currentContentIndex];
   }, [allFiles, currentContentIndex]);
-
-  const _openFileViewer = (fileMeta, type = "materials", idx = 0) => {
-    const normalized = normalizeFileMeta(fileMeta);
-    if (!normalized?.url) {
-      alert("No file uploaded for this item.");
-      return;
-    }
-
-    if (locked) {
-      alert("This lesson is locked. Please complete previous lesson first.");
-      return;
-    }
-    if (payReq) {
-      alert("Payment required to continue this lesson.");
-      return;
-    }
-
-    navigate(
-      `/student/courses/${id}/chapters/${activeId}/file?type=${type}&i=${idx}`,
-      {
-        state: {
-          file: normalized,
-          courseTitle: course?.title || "",
-          chapterTitle:
-            content?.chapterName || content?.title || activeLesson?.title || "",
-        },
-      }
-    );
-  };
 
   // Reset content state when lesson changes
   useEffect(() => {
@@ -606,9 +586,33 @@ export default function StudentCourseDetail() {
 
   const guessFileType = (file) => {
     if (!file?.url) return "download";
+    const mime = String(file.mimeType || "").toLowerCase();
+    if (mime.startsWith("image/")) return "image";
+    if (mime === "application/pdf" || mime.includes("pdf")) return "pdf";
+    if (mime.startsWith("video/")) return "video";
+    if (mime.startsWith("audio/")) return "audio";
+    if (
+      mime.includes("wordprocessingml") ||
+      mime.includes("msword") ||
+      mime.includes("spreadsheetml") ||
+      mime.includes("excel") ||
+      mime.includes("officedocument") ||
+      mime.includes("presentationml") ||
+      mime.includes("powerpoint") ||
+      mime.includes("opendocument")
+    )
+      return "office";
+    if (
+      mime.startsWith("text/") ||
+      mime === "application/json" ||
+      mime === "application/xml" ||
+      mime === "application/csv"
+    )
+      return "text";
+
     const url = String(file.url).toLowerCase();
     const ext = url.split("?")[0].split(".").pop() || "";
-    
+
     // Image formats - comprehensive list
     if (["png", "jpg", "jpeg", "jpe", "gif", "webp", "bmp", "svg", "ico", "tiff", "tif", "avif", "heic", "heif"].includes(ext)) return "image";
     
@@ -630,6 +634,34 @@ export default function StudentCourseDetail() {
     return "download";
   };
 
+  useEffect(() => {
+    setLessonPdfPage(1);
+    setLessonPdfNumPages(null);
+  }, [currentContent?.url, currentContentIndex]);
+
+  const handleLessonNavNext = () => {
+    const isPdf = currentContent && guessFileType(currentContent) === "pdf";
+    if (isPdf && lessonPdfNumPages != null && lessonPdfPage < lessonPdfNumPages) {
+      setLessonPdfPage((p) => p + 1);
+      return;
+    }
+    handleNextContent();
+  };
+
+  const handleLessonNavPrev = () => {
+    const isPdf = currentContent && guessFileType(currentContent) === "pdf";
+    if (isPdf && lessonPdfPage > 1) {
+      setLessonPdfPage((p) => p - 1);
+      return;
+    }
+    handlePreviousContent();
+  };
+
+  const lessonNavPrevDisabled =
+    currentContent && guessFileType(currentContent) === "pdf"
+      ? lessonPdfPage <= 1 && currentContentIndex === 0
+      : currentContentIndex === 0;
+
   // Get Office Online Viewer URL with fallback
   const getOfficeViewerUrl = (fileUrl, useGoogle = false) => {
     if (useGoogle) {
@@ -645,7 +677,7 @@ export default function StudentCourseDetail() {
     <>
       <StudentNavbar />
 
-      <div className="scd-page">
+      <div className="scd-page scd-page--fill">
         <div className="scd-container">
           <div className="scd-topbar">
             <button className="scd-btn scd-btn-ghost" onClick={() => navigate(-1)}>
@@ -740,7 +772,7 @@ export default function StudentCourseDetail() {
                     )}
                   </aside>
 
-                  <main className="scd-content">
+                  <main className="scd-content scd-content--lesson">
                     {!activeLesson ? (
                       <div className="scd-content-empty">Select a lesson to continue.</div>
                     ) : (
@@ -772,7 +804,7 @@ export default function StudentCourseDetail() {
                           ) : null}
                         </div>
 
-                        <div className="slv-content" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 250px)", minHeight: "500px", maxHeight: "calc(100vh - 200px)", position: "relative" }}>
+                        <div className="slv-content slv-content--fill scd-lesson-main">
                           {/* Sequential Content Display */}
                           {allFiles.length === 0 ? (
                             <div style={{ 
@@ -786,12 +818,12 @@ export default function StudentCourseDetail() {
                               <p>This lesson doesn't have any content uploaded yet.</p>
                             </div>
                           ) : currentContent && !showPostContentOptions ? (
-                            <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
-                              <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingBottom: "120px", minHeight: 0, scrollbarWidth: "thin" }}>
+                            <div className="scd-lesson-column">
+                              <div className="scd-lesson-stage">
                               {/* Video Display */}
                               {currentContent.type === "video" && (
-                                <div className="slv-video-section">
-                                  <h2>📹 Lesson Video</h2>
+                                <div className="slv-video-section scd-video-stage" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                                  <h2 style={{ flexShrink: 0 }}>📹 Lesson Video</h2>
                                   <div className="slv-video-wrapper">
                                     <video
                                       ref={videoRef}
@@ -827,13 +859,29 @@ export default function StudentCourseDetail() {
                                       ✅ Video completed! Click "Next" to continue.
                                     </div>
                                   )}
+                                  {currentContent.type === "video" && !isCompleted && (
+                                    <div
+                                      style={{
+                                        marginTop: "1rem",
+                                        padding: "12px",
+                                        background: "#fff3cd",
+                                        border: "1px solid #ffc107",
+                                        borderRadius: "8px",
+                                        textAlign: "center",
+                                        fontSize: "0.875rem",
+                                        color: "#856404",
+                                      }}
+                                    >
+                                      💡 You can watch the video or click &quot;Next&quot; to skip to the next content.
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
-                              {/* File Display (Materials, Notes, Tasks, Case Study) */}
+                              {/* File Display (Materials, Notes, Tasks, Case Study) — fills remaining height */}
                               {currentContent.type !== "video" && (
-                                <div className="slv-materials-section">
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                                <div className="slv-materials-section" style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+                                  <div className="scd-lesson-toolbar">
                                     <h2 style={{ margin: 0 }}>
                                       {currentContent.type === "materials" && "📎 Lesson Materials"}
                                       {currentContent.type === "notesFiles" && "📝 Notes Files"}
@@ -841,6 +889,7 @@ export default function StudentCourseDetail() {
                                       {currentContent.type === "caseStudy" && "📄 Case Study"}
                                     </h2>
                                     <button
+                                      type="button"
                                       onClick={() => setFullScreenContent(currentContent)}
                                       style={{
                                         padding: "8px 16px",
@@ -855,7 +904,7 @@ export default function StudentCourseDetail() {
                                         alignItems: "center",
                                         gap: "6px",
                                         boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)",
-                                        transition: "all 0.2s"
+                                        transition: "all 0.2s",
                                       }}
                                       onMouseEnter={(e) => {
                                         e.target.style.transform = "scale(1.05)";
@@ -870,191 +919,207 @@ export default function StudentCourseDetail() {
                                       Open Full Page
                                     </button>
                                   </div>
-                                  <div style={{ marginTop: "1rem", maxHeight: "calc(100vh - 400px)", overflow: "auto" }}>
-                                    {guessFileType(currentContent) === "pdf" && (
-                                      <iframe
-                                        title="content"
-                                        src={currentContent.url}
-                                        style={{ width: "100%", height: "600px", maxHeight: "calc(100vh - 400px)", border: "none", borderRadius: "8px" }}
+                                  <p className="scd-muted" style={{ margin: "0 0 8px", fontSize: 13 }}>
+                                    {currentContentIndex + 1} of {allFiles.length}{" "}
+                                    {currentContent.type === "materials"
+                                      ? "Materials"
+                                      : currentContent.type === "notesFiles"
+                                      ? "Notes files"
+                                      : currentContent.type === "taskFiles"
+                                      ? "Tasks"
+                                      : currentContent.type === "caseStudy"
+                                      ? "Case study"
+                                      : ""}
+                                  </p>
+                                  {guessFileType(currentContent) === "pdf" && (
+                                    <div
+                                      className="scd-viewer-surface"
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        minHeight: "min(78vh, 920px)",
+                                      }}
+                                    >
+                                      <PDFViewer
+                                        variant="embedded"
+                                        hideBuiltInPageControls
+                                        showZoom={false}
+                                        url={currentContent.url}
+                                        fileName={
+                                          currentContent.displayName ||
+                                          currentContent.name
+                                        }
+                                        page={lessonPdfPage}
+                                        onPageChange={setLessonPdfPage}
+                                        onNumPagesReady={setLessonPdfNumPages}
                                       />
-                                    )}
-                                    {guessFileType(currentContent) === "image" && (
-                                      <div style={{ width: "100%", textAlign: "center", marginTop: "1rem", maxHeight: "calc(100vh - 400px)", overflow: "auto" }}>
-                                        <img
-                                          src={currentContent.url}
-                                          alt="content"
-                                          style={{ 
-                                            maxWidth: "100%", 
-                                            maxHeight: "calc(100vh - 400px)",
-                                            borderRadius: "8px",
-                                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-                                          }}
-                                          onError={(e) => {
-                                            e.target.style.display = "none";
-                                            const errorDiv = e.target.parentNode.querySelector(".image-error");
-                                            if (errorDiv) {
-                                              errorDiv.style.display = "block";
-                                            }
-                                          }}
-                                        />
-                                        <div className="image-error" style={{ display: "none", padding: "20px", color: "#dc2626" }}>
-                                          <p>Failed to load image. <a href={currentContent.url} target="_blank" rel="noreferrer" download>Download instead</a></p>
-                                        </div>
+                                    </div>
+                                  )}
+                                  {guessFileType(currentContent) === "image" && (
+                                    <div className="scd-viewer-surface scd-viewer-surface--scroll" style={{ alignItems: "center", justifyContent: "center" }}>
+                                      <img
+                                        src={currentContent.url}
+                                        alt="content"
+                                        style={{
+                                          maxWidth: "100%",
+                                          maxHeight: "100%",
+                                          objectFit: "contain",
+                                          borderRadius: "8px",
+                                        }}
+                                        onError={(e) => {
+                                          e.target.style.display = "none";
+                                          const errorDiv = e.target.parentNode.querySelector(".image-error");
+                                          if (errorDiv) {
+                                            errorDiv.style.display = "block";
+                                          }
+                                        }}
+                                      />
+                                      <div className="image-error" style={{ display: "none", padding: "20px", color: "#dc2626" }}>
+                                        <p>
+                                          Failed to load image.{" "}
+                                          <a href={currentContent.url} target="_blank" rel="noreferrer" download>
+                                            Download instead
+                                          </a>
+                                        </p>
                                       </div>
-                                    )}
-                                    {guessFileType(currentContent) === "video" && (
-                                      <video
-                                        controls
-                                        src={currentContent.url}
-                                        style={{ width: "100%", borderRadius: 12, maxHeight: "calc(100vh - 400px)" }}
-                                      />
-                                    )}
-                                    {guessFileType(currentContent) === "office" && (
-                                      <div style={{ width: "100%", marginTop: "1rem" }}>
-                                        {!isPublicUrl(currentContent.url) || officeViewerError[currentContent.url] ? (
-                                          // For localhost files or when viewer fails, use OfficeFileViewer component
+                                    </div>
+                                  )}
+                                  {guessFileType(currentContent) === "video" && (
+                                    <div className="scd-viewer-surface" style={{ padding: 12 }}>
+                                      <video controls src={currentContent.url} style={{ width: "100%", borderRadius: 12, maxHeight: "100%" }} />
+                                    </div>
+                                  )}
+                                  {guessFileType(currentContent) === "office" && (
+                                    <div
+                                      className="scd-viewer-surface scd-viewer-surface--scroll"
+                                      style={{
+                                        padding: 0,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        flex: 1,
+                                        minHeight: 0,
+                                      }}
+                                    >
+                                      {!isPublicUrl(currentContent.url) || officeViewerError[currentContent.url] ? (
+                                        <div style={{ flex: 1, minHeight: 0, padding: 12, overflow: "auto" }}>
                                           <OfficeFileViewer
                                             fileUrl={currentContent.url}
                                             fileName={currentContent.displayName || currentContent.name}
                                           />
-                                        ) : (
-                                          <iframe
-                                            title="Office Document Viewer"
-                                            src={getOfficeViewerUrl(currentContent.url, useGoogleViewer[currentContent.url])}
-                                            style={{ 
-                                              width: "100%", 
-                                              height: "600px",
-                                              maxHeight: "calc(100vh - 400px)", 
-                                              border: "1px solid #e5e7eb", 
-                                              borderRadius: "8px",
-                                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-                                            }}
-                                            allowFullScreen
-                                            onError={() => {
-                                              if (!useGoogleViewer[currentContent.url]) {
-                                                setUseGoogleViewer(prev => ({ ...prev, [currentContent.url]: true }));
-                                              } else {
-                                                setOfficeViewerError(prev => ({ ...prev, [currentContent.url]: true }));
-                                              }
-                                            }}
-                                          />
-                                        )}
-                                        {/* Download option always available */}
-                                        <div style={{ marginTop: "1rem", textAlign: "center" }}>
-                                          <a
-                                            href={currentContent.url}
-                                            download
-                                            style={{ 
-                                              display: "inline-block",
-                                              padding: "10px 20px",
-                                              background: "#6b7280",
-                                              color: "white",
-                                              textDecoration: "none",
-                                              borderRadius: "6px",
-                                              fontWeight: "600",
-                                              fontSize: "14px"
-                                            }}
-                                          >
-                                            📥 Download File
-                                          </a>
                                         </div>
-                                      </div>
-                                    )}
-                                    {guessFileType(currentContent) === "audio" && (
-                                      <div style={{ width: "100%", marginTop: "1rem", textAlign: "center" }}>
-                                        <audio
-                                          controls
-                                          src={currentContent.url}
-                                          style={{ width: "100%", maxWidth: "600px" }}
-                                        >
-                                          Your browser does not support the audio element.
-                                        </audio>
-                                        <div style={{ marginTop: "1rem" }}>
-                                          <a
-                                            className="slv-btn-view"
-                                            href={currentContent.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            download
-                                            style={{ 
-                                              display: "inline-block",
-                                              padding: "10px 20px",
-                                              background: "#6b7280",
-                                              color: "white",
-                                              textDecoration: "none",
-                                              borderRadius: "6px",
-                                              fontWeight: "600"
-                                            }}
-                                          >
-                                            Download Audio
-                                          </a>
-                                        </div>
-                                      </div>
-                                    )}
-                                    {guessFileType(currentContent) === "text" && (
-                                      <div style={{ width: "100%", marginTop: "1rem", maxHeight: "calc(100vh - 400px)", overflow: "auto" }}>
+                                      ) : (
                                         <iframe
-                                          title="Text File Viewer"
-                                          src={currentContent.url}
-                                          style={{ 
-                                            width: "100%", 
-                                            height: "500px",
-                                            maxHeight: "calc(100vh - 400px)", 
-                                            border: "1px solid #e5e7eb", 
-                                            borderRadius: "8px",
-                                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                                          title="Office Document Viewer"
+                                          src={getOfficeViewerUrl(currentContent.url, useGoogleViewer[currentContent.url])}
+                                          allowFullScreen
+                                          onError={() => {
+                                            if (!useGoogleViewer[currentContent.url]) {
+                                              setUseGoogleViewer((prev) => ({ ...prev, [currentContent.url]: true }));
+                                            } else {
+                                              setOfficeViewerError((prev) => ({ ...prev, [currentContent.url]: true }));
+                                            }
                                           }}
                                         />
-                                        <div style={{ marginTop: "1rem", textAlign: "center" }}>
-                                          <a
-                                            className="slv-btn-view"
-                                            href={currentContent.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            download
-                                            style={{ 
-                                              display: "inline-block",
-                                              padding: "10px 20px",
-                                              background: "#6b7280",
-                                              color: "white",
-                                              textDecoration: "none",
-                                              borderRadius: "6px",
-                                              fontWeight: "600"
-                                            }}
-                                          >
-                                            Download File
-                                          </a>
-                                        </div>
+                                      )}
+                                      <div style={{ flexShrink: 0, padding: "12px", textAlign: "center", borderTop: "1px solid #e2e8f0" }}>
+                                        <a
+                                          href={currentContent.url}
+                                          download
+                                          style={{
+                                            display: "inline-block",
+                                            padding: "10px 20px",
+                                            background: "#6b7280",
+                                            color: "white",
+                                            textDecoration: "none",
+                                            borderRadius: "6px",
+                                            fontWeight: "600",
+                                            fontSize: "14px",
+                                          }}
+                                        >
+                                          📥 Download File
+                                        </a>
                                       </div>
-                                    )}
-                                    {guessFileType(currentContent) === "download" && (
-                                      <div style={{ textAlign: "center", padding: "40px" }}>
+                                    </div>
+                                  )}
+                                  {guessFileType(currentContent) === "audio" && (
+                                    <div className="scd-viewer-surface scd-viewer-surface--scroll" style={{ justifyContent: "center", padding: 24 }}>
+                                      <audio controls src={currentContent.url} style={{ width: "100%", maxWidth: "600px" }}>
+                                        Your browser does not support the audio element.
+                                      </audio>
+                                      <div style={{ marginTop: "1rem", textAlign: "center" }}>
                                         <a
                                           className="slv-btn-view"
                                           href={currentContent.url}
                                           target="_blank"
                                           rel="noreferrer"
-                                          style={{ 
+                                          download
+                                          style={{
                                             display: "inline-block",
-                                            padding: "12px 24px",
-                                            background: "#3b82f6",
+                                            padding: "10px 20px",
+                                            background: "#6b7280",
                                             color: "white",
                                             textDecoration: "none",
                                             borderRadius: "6px",
-                                            fontWeight: "600"
+                                            fontWeight: "600",
                                           }}
                                         >
-                                          Open / Download
+                                          Download Audio
                                         </a>
                                       </div>
-                                    )}
-                                  </div>
+                                    </div>
+                                  )}
+                                  {guessFileType(currentContent) === "text" && (
+                                    <div className="scd-viewer-surface">
+                                      <iframe title="Text File Viewer" src={currentContent.url} />
+                                      <div style={{ flexShrink: 0, padding: "12px", textAlign: "center", borderTop: "1px solid #e2e8f0" }}>
+                                        <a
+                                          className="slv-btn-view"
+                                          href={currentContent.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          download
+                                          style={{
+                                            display: "inline-block",
+                                            padding: "10px 20px",
+                                            background: "#6b7280",
+                                            color: "white",
+                                            textDecoration: "none",
+                                            borderRadius: "6px",
+                                            fontWeight: "600",
+                                          }}
+                                        >
+                                          Download File
+                                        </a>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {guessFileType(currentContent) === "download" && (
+                                    <div className="scd-viewer-surface scd-viewer-surface--scroll" style={{ justifyContent: "center", padding: 40 }}>
+                                      <a
+                                        className="slv-btn-view"
+                                        href={currentContent.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{
+                                          display: "inline-block",
+                                          padding: "12px 24px",
+                                          background: "#3b82f6",
+                                          color: "white",
+                                          textDecoration: "none",
+                                          borderRadius: "6px",
+                                          fontWeight: "600",
+                                        }}
+                                      >
+                                        Open / Download
+                                      </a>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
                               {/* Notes Text Display */}
                               {notesText && currentContent.type === "notesFiles" && (
-                                <div className="slv-notes" style={{ marginTop: "1.5rem" }}>
+                                <div className="slv-notes" style={{ marginTop: "1rem", flexShrink: 0, maxHeight: "30%", overflow: "auto" }}>
                                   <h3>Notes</h3>
                                   <div className="slv-notes-text">{notesText}</div>
                                 </div>
@@ -1062,17 +1127,15 @@ export default function StudentCourseDetail() {
                               </div>
 
                               {/* Navigation for Sequential Content */}
-                              <div style={{ 
-                                position: "absolute", 
-                                bottom: 0, 
-                                left: 0, 
-                                right: 0, 
-                                background: "white", 
-                                zIndex: 100, 
-                                paddingTop: "1rem",
-                                paddingBottom: "1rem",
-                                boxShadow: "0 -2px 10px rgba(0,0,0,0.1)"
-                              }}>
+                              <div
+                                className="scd-lesson-nav-bar"
+                                style={{
+                                  background: "white",
+                                  boxShadow: "0 -2px 10px rgba(0,0,0,0.08)",
+                                  borderRadius: "10px",
+                                  overflow: "hidden",
+                                }}
+                              >
                               {currentContentIndex >= allFiles.length - 1 ? (
                                 // On last file: Show Case Study/MCQ buttons directly
                                 <div style={{
@@ -1164,25 +1227,44 @@ export default function StudentCourseDetail() {
                                 }}>
                                   <button
                                     className="slv-btn-nav slv-btn-prev"
-                                    onClick={handlePreviousContent}
-                                    disabled={currentContentIndex === 0}
-                                    style={{ opacity: currentContentIndex === 0 ? 0.5 : 1, cursor: currentContentIndex === 0 ? "not-allowed" : "pointer" }}
+                                    onClick={handleLessonNavPrev}
+                                    disabled={lessonNavPrevDisabled}
+                                    style={{
+                                      opacity: lessonNavPrevDisabled ? 0.5 : 1,
+                                      cursor: lessonNavPrevDisabled ? "not-allowed" : "pointer",
+                                    }}
                                   >
                                     ← Previous
                                   </button>
                                   
                                   <div style={{ color: "#64748b", fontSize: "0.95rem", textAlign: "center" }}>
-                                    <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                                      {currentContentIndex + 1} of {allFiles.length}
-                                    </div>
-                                    <div style={{ fontSize: "0.875rem" }}>
-                                      {currentContent.category}
-                                    </div>
+                                    {currentContent &&
+                                    guessFileType(currentContent) === "pdf" &&
+                                    lessonPdfNumPages != null ? (
+                                      <>
+                                        <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                          Page {lessonPdfPage} of {lessonPdfNumPages}
+                                        </div>
+                                        <div style={{ fontSize: "0.875rem" }}>
+                                          Material {currentContentIndex + 1} of {allFiles.length} ·{" "}
+                                          {currentContent.category}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                          {currentContentIndex + 1} of {allFiles.length}
+                                        </div>
+                                        <div style={{ fontSize: "0.875rem" }}>
+                                          {currentContent.category}
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
 
                                   <button
                                     className="slv-btn-nav slv-btn-primary"
-                                    onClick={handleNextContent}
+                                    onClick={handleLessonNavNext}
                                     style={{ 
                                       cursor: "pointer"
                                     }}
@@ -1192,22 +1274,6 @@ export default function StudentCourseDetail() {
                                 </div>
                               )}
                               </div>
-                              
-                              {/* Show message if video not completed but user can still proceed */}
-                              {currentContent.type === "video" && !isCompleted && (
-                                <div style={{ 
-                                  marginTop: "1rem", 
-                                  padding: "12px", 
-                                  background: "#fff3cd", 
-                                  border: "1px solid #ffc107",
-                                  borderRadius: "8px",
-                                  textAlign: "center",
-                                  fontSize: "0.875rem",
-                                  color: "#856404"
-                                }}>
-                                  💡 You can watch the video or click "Next" to skip to the next content.
-                                </div>
-                              )}
                             </div>
                           ) : null}
 
@@ -1255,11 +1321,15 @@ export default function StudentCourseDetail() {
                                     </div>
                                   )}
                                   {guessFileType(caseStudyFile) === "pdf" && (
-                                    <iframe
-                                      title="Case Study PDF"
-                                      src={caseStudyFile.url}
-                                      style={{ width: "100%", minHeight: "600px", border: "none", borderRadius: "8px" }}
-                                    />
+                                    <div style={{ width: "100%" }}>
+                                      <PDFViewer
+                                        url={caseStudyFile.url}
+                                        fileName={
+                                          caseStudyFile.displayName ||
+                                          caseStudyFile.name
+                                        }
+                                      />
+                                    </div>
                                   )}
                                   {guessFileType(caseStudyFile) === "image" && (
                                     <img
@@ -1444,18 +1514,22 @@ export default function StudentCourseDetail() {
             }}
           >
             {guessFileType(fullScreenContent) === "pdf" && (
-              <iframe
-                src={fullScreenContent.url}
+              <div
                 style={{
                   width: "100%",
                   height: "100%",
-                  minHeight: "800px",
-                  border: "none",
-                  borderRadius: "8px",
-                  boxShadow: "0 10px 25px rgba(0,0,0,0.3)"
+                  minHeight: "min(85vh, 900px)",
+                  maxWidth: "1200px",
+                  margin: "0 auto",
                 }}
-                title={fullScreenContent.displayName || fullScreenContent.name}
-              />
+              >
+                <PDFViewer
+                  url={fullScreenContent.url}
+                  fileName={
+                    fullScreenContent.displayName || fullScreenContent.name
+                  }
+                />
+              </div>
             )}
             {guessFileType(fullScreenContent) === "image" && (
               <img

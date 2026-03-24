@@ -1,129 +1,12 @@
-/* ===== LAYOUT ===== */
-.teacher-dashboard-layout {
-  font-family: "Poppins", sans-serif;
-  background-color: #f7f9fc;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* Layout (.teacher-dashboard-layout, .teacher-body, sidebar) lives in TeacherDashboard.css */
 
-/* ===== NAVBAR ===== */
-.teacher-navbar {
-  background: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 10;
-}
-
-.nav-left {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.nav-logo {
-  width: 45px;
-  height: 45px;
-  object-fit: contain;
-}
-
-.nav-left h2 {
-  color: #0056ff;
-  font-weight: 600;
-}
-
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.welcome-text {
-  font-size: 0.95rem;
-  color: #333;
-}
-
-/* ===== SIDEBAR ===== */
-.teacher-body {
-  display: flex;
-  margin-top: 70px;
-}
-
-.teacher-sidebar {
-  background: #eef1f7;
-  width: 260px;
-  height: calc(100vh - 70px);
-  padding: 1rem;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-}
-
-.teacher-sidebar button {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  background: none;
-  border: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #333;
-  padding: 0.8rem 1rem;
-  width: 100%;
-  text-align: left;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.teacher-sidebar button:hover,
-.teacher-sidebar button.active {
-  background: #dce3f7;
-  color: #0056ff;
-}
-
-.dropdown-menu {
-  padding-left: 1.5rem;
-  margin-top: 0.4rem;
-}
-
-.dropdown-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.dropdown-menu li {
-  padding: 0.4rem 0;
-  color: #333;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.dropdown-menu li:hover,
-.dropdown-menu li.active {
-  color: #0056ff;
-  font-weight: 500;
-}
-
-/* ===== FORM SECTION ===== */
-.teacher-content {
-  flex: 1;
-  padding: 2rem;
-}
-
-.create-course-form {
+.teacher-content .create-course-form {
   background: #fff;
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-width: 600px;
-  margin: 2rem auto;
+  margin: 2rem auto 1.5rem;
 }
 
 .create-course-form h2 {
@@ -188,10 +71,6 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .teacher-content {
-    padding: 1.5rem 1rem;
-  }
-
   .create-course-form {
     padding: 1.5rem;
     margin: 1rem auto;
@@ -210,11 +89,145 @@
   }
 }
 
-@media (max-width: 480px) {
-  .teacher-content {
-    padding: 1rem 0.75rem;
-  }
+/* Courses table below create form */
+.create-course-coursesPanel {
+  max-width: 1100px;
+  margin: 0 auto 2.5rem;
+  padding: 1.5rem 1.75rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
 
+.create-course-coursesPanel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.create-course-coursesPanel__head h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.create-course-coursesPanel__sub {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.create-course-coursesPanel__refresh {
+  width: auto;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+}
+
+.create-course-coursesPanel__empty {
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.create-course-tableWrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.create-course-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.create-course-table thead {
+  background: #f1f5f9;
+  text-align: left;
+}
+
+.create-course-table th {
+  padding: 12px 14px;
+  font-weight: 700;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.create-course-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+  color: #334155;
+}
+
+.create-course-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.create-course-table__row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.create-course-table__row:hover {
+  background: #f8fafc;
+}
+
+.create-course-table__title {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.create-course-table__muted {
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.create-course-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.create-course-pagination__btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #334155;
+}
+
+.create-course-pagination__btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.create-course-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.create-course-pagination__info {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
   .create-course-form {
     padding: 1rem;
     border-radius: 8px;

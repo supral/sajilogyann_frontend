@@ -271,25 +271,8 @@ const AdminDashboard = () => {
     ));
 
   return (
-    <div
-      className={`admin-layout ${
-        sidebarOpen ? "sidebar-open" : "sidebar-closed"
-      }`}
-    >
+    <div className={`admin-layout ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <Navbar />
-      
-      {/* Hamburger Button Bar - Below Navbar */}
-      <div className="hamburger-bar">
-        <button
-          className="hamburger-btn"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          type="button"
-          aria-label="Toggle sidebar menu"
-        >
-          <i className={`fa-solid ${sidebarOpen ? "fa-times" : "fa-bars"}`}></i>
-          <span>Menu</span>
-        </button>
-      </div>
 
       <div className="admin-container">
         <AdminSidebar
@@ -301,17 +284,17 @@ const AdminDashboard = () => {
 
         <main className="admin-main">
           <div
-            className="page-header-row"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
+            className="admin-page-header"
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}
           >
             <div>
-              <h1 className="page-title">Admin Dashboard</h1>
-              <p className="page-subtitle">
-                {loading ? "Loading dashboard…" : "Live stats from database. Use the menu to manage users, teachers, courses, and settings."}
+              <h2 className="page-title" style={{ marginBottom: 4 }}>
+                Admin Dashboard
+              </h2>
+              <p style={{ marginTop: 0, opacity: 0.8 }}>
+                {loading
+                  ? "Loading dashboard…"
+                  : "Live stats from database. Use the menu to manage users, teachers, courses, and settings."}
               </p>
             </div>
 

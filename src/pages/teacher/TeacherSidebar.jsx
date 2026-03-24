@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../../styles/TeacherDashboard.css";
 
@@ -10,6 +10,14 @@ const TeacherSidebar = ({ activeTab, setActiveTab, isOpen = false, onClose }) =>
     typeof activeTab === "string" && typeof setActiveTab === "function";
 
   const computedActiveTab = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith("/course-detail") || path.includes("/teacher/courses/")) {
+      return "view-courses";
+    }
+    if (path.startsWith("/teacher/student/")) {
+      return "enrolled-students";
+    }
+
     if (isTabMode) return activeTab;
 
     if (location.pathname === "/teacher-dashboard") return "dashboard";
@@ -19,6 +27,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, isOpen = false, onClose }) =>
     if (location.pathname === "/teacher/enrolled-students") return "enrolled-students";
     if (location.pathname === "/teacher/mcq-attempts") return "mcq-attempts";
     if (location.pathname === "/teacher/analytics") return "analytics";
+    if (location.pathname === "/teacher/activity-log") return "activity-log";
     if (location.pathname === "/reports") return "reports";
 
     return "dashboard";
@@ -35,6 +44,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, isOpen = false, onClose }) =>
         "/teacher/enrolled-students": "enrolled-students",
         "/teacher/mcq-attempts": "mcq-attempts",
         "/teacher/analytics": "analytics",
+        "/teacher/activity-log": "activity-log",
         "/reports": "reports",
       };
       setActiveTab(tabMap[route] || "dashboard");
@@ -76,6 +86,12 @@ const TeacherSidebar = ({ activeTab, setActiveTab, isOpen = false, onClose }) =>
       route: "/teacher/mcq-attempts",
     },
     {
+      id: "activity-log",
+      label: "Activity log",
+      icon: "fa-clock-rotate-left",
+      route: "/teacher/activity-log",
+    },
+    {
       id: "analytics",
       label: "Analytics & Reports",
       icon: "fa-chart-line",
@@ -84,7 +100,7 @@ const TeacherSidebar = ({ activeTab, setActiveTab, isOpen = false, onClose }) =>
   ];
 
   const isCourseTab = ["create-course", "view-courses", "archived-courses"].includes(computedActiveTab);
-  const [activeDropdown, setActiveDropdown] = React.useState(isCourseTab ? "courses" : null);
+  const [activeDropdown, setActiveDropdown] = useState(isCourseTab ? "courses" : null);
 
   React.useEffect(() => {
     if (isCourseTab) setActiveDropdown("courses");

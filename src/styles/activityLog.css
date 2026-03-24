@@ -1,0 +1,192 @@
+/* Activity log timeline (student / teacher / admin) */
+.act-log {
+  font-family: "Poppins", system-ui, sans-serif;
+}
+
+.act-log--loading,
+.act-log--error,
+.act-log--empty {
+  padding: 24px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #475569;
+  text-align: center;
+}
+
+.act-log--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.act-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.act-summary-card {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.act-summary-card__value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.act-summary-card__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+.act-summary-note {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+  padding: 10px 12px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.act-log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.act-log-list::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.35), rgba(15, 23, 42, 0.08));
+  border-radius: 2px;
+}
+
+.act-log-item {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding: 0 0 20px 0;
+  margin-left: 4px;
+}
+
+.act-log-item:last-child {
+  padding-bottom: 0;
+}
+
+.act-log-dot {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+  z-index: 1;
+}
+
+.act-log-item--log .act-log-dot {
+  background: #64748b;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.35);
+}
+
+.act-log-item--mcq .act-log-dot {
+  background: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
+}
+
+.act-log-item--certificate .act-log-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.35);
+}
+
+.act-log-item--progress .act-log-dot {
+  background: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+}
+
+.act-log-item--enrollment .act-log-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35);
+}
+
+.act-log-body {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.act-log-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.act-log-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.act-log-detail {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.act-log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.act-log-pill {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.act-log-pill--muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+@media (max-width: 520px) {
+  .act-log-list::before {
+    left: 7px;
+  }
+}

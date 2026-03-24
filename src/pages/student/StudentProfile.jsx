@@ -3,9 +3,10 @@
 // ✅ FIX: Removes the weird dotted/-- meta line by not rendering placeholders
 // ✅ Keeps your existing logic intact
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import StudentNavbar from "./StudentNavbar";
 import Footer from "../../components/Footer";
+import { buildProfileImageUrl } from "../../utils/profileImageUrl";
 import "../../styles/StudentProfile.css";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -202,12 +203,10 @@ const StudentProfile = () => {
     load();
   }, [authHeaders]);
 
-  const profileImageUrl = useMemo(() => {
-    const path = profile?.profileImage || "";
-    if (!path) return "";
-    if (/^https?:\/\//i.test(path)) return path;
-    return path.startsWith("/") ? `${API_HOST}${path}` : `${API_HOST}/${path}`;
-  }, [profile?.profileImage]);
+  const profileImageUrl = useMemo(
+    () => buildProfileImageUrl(API_HOST, profile?.profileImage),
+    [profile?.profileImage]
+  );
 
   const saveProfile = async () => {
     if (!token) return;
@@ -350,38 +349,41 @@ const StudentProfile = () => {
     return a?.chapterId || a?.lessonId || a?.chapter || a?.lesson || "";
   };
 
-  const normalizeDbCert = (c) => {
-    const courseId = oidOrNull(c?.courseId?._id || c?.courseId || "");
-    const courseKey = courseId || String(c?._id || c?.certificateNo || Math.random());
+  const normalizeDbCert = useCallback(
+    (c) => {
+      const courseId = oidOrNull(c?.courseId?._id || c?.courseId || "");
+      const courseKey = courseId || String(c?._id || c?.certificateNo || Math.random());
 
-    return {
-      key: courseKey,
-      courseId,
-      certificateNo: safeStr(c?.certificateNo, "—"),
-      issuedAt: c?.issuedAt || c?.createdAt || new Date().toISOString(),
+      return {
+        key: courseKey,
+        courseId,
+        certificateNo: safeStr(c?.certificateNo, "—"),
+        issuedAt: c?.issuedAt || c?.createdAt || new Date().toISOString(),
 
-      studentName: safeStr(c?.studentName || c?.student?.name || student?.name, "Student"),
-      courseTitle: safeStr(
-        c?.courseTitle || c?.course?.title || c?.courseName || c?.course,
-        "Course"
-      ),
+        studentName: safeStr(c?.studentName || c?.student?.name || student?.name, "Student"),
+        courseTitle: safeStr(
+          c?.courseTitle || c?.course?.title || c?.courseName || c?.course,
+          "Course"
+        ),
 
-      gpaLetter: safeStr(c?.gpaLetter || c?.gpa || c?.grade, "—"),
-      gpaPointsText: safeStr(
-        c?.gpaPointsText || (c?.gpaPoints != null ? String(c?.gpaPoints) : ""),
-        "—"
-      ),
+        gpaLetter: safeStr(c?.gpaLetter || c?.gpa || c?.grade, "—"),
+        gpaPointsText: safeStr(
+          c?.gpaPointsText || (c?.gpaPoints != null ? String(c?.gpaPoints) : ""),
+          "—"
+        ),
 
-      praiseLine:
-        safeStr(c?.praiseLine, "") ||
-        "with successful completion and admirable commitment.",
+        praiseLine:
+          safeStr(c?.praiseLine, "") ||
+          "with successful completion and admirable commitment.",
 
-      stored: true,
-      _raw: c,
-    };
-  };
+        stored: true,
+        _raw: c,
+      };
+    },
+    [student?.name]
+  );
 
-  const loadDbCertificates = async () => {
+  const loadDbCertificates = useCallback(async () => {
     if (!token) return;
     setDbCertsLoading(true);
     try {
@@ -410,12 +412,11 @@ const StudentProfile = () => {
     } finally {
       setDbCertsLoading(false);
     }
-  };
+  }, [token, authHeaders, normalizeDbCert]);
 
   useEffect(() => {
     loadDbCertificates();
-
-  }, [token]);
+  }, [loadDbCertificates]);
 
   const dbByCourseId = useMemo(() => {
     const map = new Map();
@@ -714,57 +715,69 @@ const StudentProfile = () => {
           }
         `}</style>
 
+        <div className="profile-page-inner">
         {/* HEADER SECTION */}
-        <section className="profile-header-card">
-          <div className="profile-avatar">
+        <section className="profile-header-card" aria-labelledby="profile-heading">
+          <div className="profile-header-main">
+            <div className="profile-avatar profile-avatar--hero">
             {profileImageUrl ? (
               <img src={profileImageUrl} alt="Profile" className="profile-avatar-img" />
             ) : (
-              <span>{(student.name || "S").charAt(0).toUpperCase()}</span>
+              <span aria-hidden="true">{(student.name || "S").charAt(0).toUpperCase()}</span>
             )}
           </div>
 
           <div className="profile-header-info">
-            <h2>{student.name}</h2>
+            <div className="profile-header-title-row">
+              <h2 id="profile-heading">{student.name}</h2>
+              <span className="profile-role-pill">Student</span>
+            </div>
             <p className="profile-email">{student.email}</p>
 
             {metaLine ? <p className="profile-meta">{metaLine}</p> : null}
 
             {cleanValue(student?.joinedOn) ? (
               <p className="profile-joined">
-                Enrolled on <strong>{student.joinedOn}</strong>
+                Member since <strong>{student.joinedOn}</strong>
               </p>
             ) : null}
 
             {loading ? (
-              <p className="sub-text" style={{ marginTop: 10 }}>
+              <p className="profile-status profile-status--loading" role="status">
                 Loading your data…
               </p>
             ) : err ? (
-              <p className="sub-text" style={{ marginTop: 10, color: "crimson" }}>
+              <p className="profile-status profile-status--error" role="alert">
                 {err}
               </p>
             ) : null}
+          </div>
+          </div>
 
+          <div className="profile-header-actions">
             <button
               type="button"
               className="profile-edit-btn"
               onClick={() => setEditOpen((o) => !o)}
-              style={{ marginTop: 12 }}
             >
-              {editOpen ? "Cancel" : "Edit profile & photo"}
+              {editOpen ? "Cancel editing" : "Edit profile & photo"}
             </button>
           </div>
         </section>
 
         {/* EDIT PROFILE SECTION */}
         {editOpen && (
-          <section className="profile-card" style={{ marginBottom: 24 }}>
+          <section className="profile-card profile-card--edit" aria-labelledby="edit-profile-heading">
             <div className="profile-card-header">
-              <h3>Personal information & profile photo</h3>
+              <div>
+                <p className="profile-card-eyebrow">Account</p>
+                <h3 id="edit-profile-heading">Personal information & profile photo</h3>
+              </div>
             </div>
             {profileSaveErr && (
-              <p className="sub-text" style={{ color: "crimson", marginBottom: 12 }}>{profileSaveErr}</p>
+              <p className="profile-alert profile-alert--error" role="alert">
+                {profileSaveErr}
+              </p>
             )}
             <div className="profile-edit-grid">
               <div className="profile-edit-avatar-wrap">
@@ -783,8 +796,8 @@ const StudentProfile = () => {
                 <input
                   type="file"
                   accept="image/*"
+                  className="profile-file-input"
                   onChange={(e) => e.target.files?.[0] && setProfileImageFile(e.target.files[0])}
-                  style={{ marginTop: 8, fontSize: 14 }}
                 />
               </div>
               <div className="profile-edit-fields">
@@ -880,7 +893,10 @@ const StudentProfile = () => {
             {/* Personal information (read-only display) */}
             <div className="profile-card">
               <div className="profile-card-header">
-                <h3>Personal information</h3>
+                <div>
+                  <p className="profile-card-eyebrow">Overview</p>
+                  <h3>Personal information</h3>
+                </div>
               </div>
               <div className="profile-info-grid">
                 {cleanValue(student?.phone) ? (
@@ -951,10 +967,14 @@ const StudentProfile = () => {
 
             <div className="profile-card">
               <div className="profile-card-header">
-                <h3>Enrolled Courses</h3>
-                <span className="badge-pill">{activeCount} Active</span>
+                <div>
+                  <p className="profile-card-eyebrow">Learning</p>
+                  <h3>Enrolled courses</h3>
+                </div>
+                <span className="badge-pill">{activeCount} active</span>
               </div>
 
+              <div className="profile-table-wrap">
               <table className="profile-table">
                 <thead>
                   <tr>
@@ -983,14 +1003,19 @@ const StudentProfile = () => {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
 
             <div className="profile-card">
-              <div className="profile-card-header">
-                <h3>Enrollment & Marks</h3>
-                <span className="sub-text">Derived from your MCQ attempts</span>
+              <div className="profile-card-header profile-card-header--stack">
+                <div>
+                  <p className="profile-card-eyebrow">Performance</p>
+                  <h3>Enrollment & marks</h3>
+                  <span className="sub-text profile-card-sub">Derived from your MCQ attempts</span>
+                </div>
               </div>
 
+              <div className="profile-table-wrap">
               <table className="profile-table">
                 <thead>
                   <tr>
@@ -1023,9 +1048,10 @@ const StudentProfile = () => {
                   )}
                 </tbody>
               </table>
+              </div>
 
               {!loading && marks.length > 0 ? (
-                <p className="sub-text" style={{ marginTop: 10 }}>
+                <p className="profile-footnote">
                   Certificates are generated for courses with <b>Total (%) ≥ {CERT_MIN_SCORE}</b>.{" "}
                   Certificate shows only <b>GPA</b> and <b>GPA Points</b>.
                 </p>
@@ -1033,11 +1059,15 @@ const StudentProfile = () => {
             </div>
 
             <div className="profile-card">
-              <div className="profile-card-header">
-                <h3>Recent MCQ Attempts</h3>
-                <span className="sub-text">Your latest chapter tests</span>
+              <div className="profile-card-header profile-card-header--stack">
+                <div>
+                  <p className="profile-card-eyebrow">Activity</p>
+                  <h3>Recent MCQ attempts</h3>
+                  <span className="sub-text profile-card-sub">Your latest chapter tests</span>
+                </div>
               </div>
 
+              <div className="profile-table-wrap">
               <table className="profile-table">
                 <thead>
                   <tr>
@@ -1076,10 +1106,11 @@ const StudentProfile = () => {
                             {r.marksObtained} / {r.totalMarks}
                           </td>
                           <td
-                            style={{
-                              fontWeight: 800,
-                              color: r.result === "pass" ? "green" : "crimson",
-                            }}
+                            className={
+                              String(r.result || "").toLowerCase() === "pass"
+                                ? "profile-result profile-result--pass"
+                                : "profile-result profile-result--fail"
+                            }
                           >
                             {String(r.result || "").toUpperCase()}
                           </td>
@@ -1090,31 +1121,33 @@ const StudentProfile = () => {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
           {/* RIGHT */}
           <div className="profile-right-column">
             <div className="profile-card certificates-card">
-              <div className="profile-card-header">
-                <div>
-                  <h3 style={{ marginBottom: 2 }}>Certificates</h3>
-                  <span className="sub-text">
-                    Certificate No is generated by server · <b>{SYSTEM_NAME}</b>
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <header className="cert-section-header">
+                <div className="cert-section-header__top">
+                  <div className="cert-section-header__titles">
+                    <p className="profile-card-eyebrow">Credentials</p>
+                    <h3 className="cert-section-header__heading">Certificates</h3>
+                  </div>
                   <button
-                    className="btn-lite"
+                    type="button"
+                    className="btn-lite cert-section-header__refresh"
                     onClick={loadDbCertificates}
                     disabled={dbCertsLoading || !token}
-                    title={!token ? "Login required" : "Refresh"}
+                    title={!token ? "Login required" : "Refresh list from server"}
                   >
                     {dbCertsLoading ? "Refreshing…" : "Refresh"}
                   </button>
                 </div>
-              </div>
+                <p className="cert-section-header__intro">
+                  Certificate numbers are issued by the server (<b>{SYSTEM_NAME}</b>). Preview or download PDFs below.
+                </p>
+              </header>
 
               {loading ? (
                 <div className="certificate-placeholder">
@@ -1137,27 +1170,38 @@ const StudentProfile = () => {
 
                     return (
                       <div key={String(c.key)} className="cert-item">
-                        <div className="cert-item-left">
-                          <div className="cert-badge">SG</div>
-                          <div>
-                            <div className="cert-course">{c.courseTitle}</div>
-                            <div className="cert-meta">
-                              <span>GPA: {c.gpaLetter}</span>
-                              <span className="dot">•</span>
-                              <span>GPA Points: {c.gpaPointsText}</span>
-                              <span className="dot">•</span>
-                              <span>Cert No: {safeStr(c.certificateNo, "Not issued yet")}</span>
-                              <span className="dot">•</span>
-                              <span
-                                style={{
-                                  fontWeight: 900,
-                                  color: stored ? "green" : "rgba(0,0,0,0.55)",
-                                }}
-                              >
-                                {stored ? "Saved" : "Not Saved"}
-                              </span>
-                            </div>
+                        <div className="cert-badge" aria-hidden="true">
+                          SG
+                        </div>
+                        <div className="cert-item-body">
+                          <div className="cert-course" title={c.courseTitle}>
+                            {c.courseTitle}
                           </div>
+                          <ul className="cert-meta-list" aria-label="Certificate details">
+                            <li>
+                              <span className="cert-meta-label">GPA</span>
+                              <span className="cert-meta-value">{c.gpaLetter}</span>
+                            </li>
+                            <li>
+                              <span className="cert-meta-label">Points</span>
+                              <span className="cert-meta-value">{c.gpaPointsText}</span>
+                            </li>
+                            <li className="cert-meta-list__wide">
+                              <span className="cert-meta-label">Cert. no.</span>
+                              <span className="cert-meta-value cert-meta-value--mono">
+                                {safeStr(c.certificateNo, "Not issued yet")}
+                              </span>
+                            </li>
+                            <li>
+                              <span
+                                className={
+                                  stored ? "cert-storage cert-storage--saved" : "cert-storage cert-storage--pending"
+                                }
+                              >
+                                {stored ? "Saved to account" : "Not saved"}
+                              </span>
+                            </li>
+                          </ul>
                         </div>
 
                         <div className="cert-item-actions">
@@ -1196,6 +1240,7 @@ const StudentProfile = () => {
             </div>
           </div>
         </section>
+        </div>
 
         {/* CERTIFICATE PREVIEW MODAL */}
         {activeCert ? (
@@ -1203,8 +1248,8 @@ const StudentProfile = () => {
             <div className="sg-modal" onClick={(e) => e.stopPropagation()}>
               <div className="sg-modal-top">
                 <div>
-                  <h3 style={{ margin: 0 }}>Certificate Preview</h3>
-                  <p className="sub-text" style={{ margin: "6px 0 0" }}>
+                  <h3 className="sg-modal-title">Certificate preview</h3>
+                  <p className="sub-text sg-modal-subtitle">
                     {activeCert.courseTitle} · GPA {activeCert.gpaLetter} · GPA Points{" "}
                     {activeCert.gpaPointsText}
                   </p>

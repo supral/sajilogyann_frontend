@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../../styles/NavbarAfterLogin.css";
 import { useAppLogo } from "../../hooks/useAppLogo.js";
+import { buildProfileImageUrl } from "../../utils/profileImageUrl.js";
 
 const API_BASE =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
@@ -30,8 +31,8 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
     }
   }, []);
 
-  // Priority: prop > fetched > storage
-  const user = userProp || userState || storageUser;
+  // Fetched profile must win over a stale parent `user` prop (e.g. useMemo([]) from login snapshot).
+  const user = userState || userProp || storageUser;
 
   const displayName = user?.name || user?.fullName || "Teacher";
 
@@ -44,12 +45,10 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
     return (a + b).toUpperCase();
   }, [displayName]);
 
-  const profileImageUrl = useMemo(() => {
-    const p = user?.profileImage || "";
-    if (!p) return "";
-    if (p.startsWith("http://") || p.startsWith("https://")) return p;
-    return `${API_BASE}${p}`; // "/uploads/profile/xxx.jpg"
-  }, [user?.profileImage]);
+  const profileImageUrl = useMemo(
+    () => buildProfileImageUrl(API_BASE, user?.profileImage),
+    [user?.profileImage]
+  );
 
   const logout = () => {
     localStorage.removeItem("bs_token");
@@ -92,59 +91,75 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
   // ✅ close dropdown on route change
   useEffect(() => setOpen(false), [location.pathname]);
 
-  // ✅ IMPORTANT: fetch latest teacher profile every time dashboard loads (and when route changes)
+  // ✅ IMPORTANT: fetch latest teacher profile when teacher routes load (try v1 + legacy paths)
   useEffect(() => {
     const fetchTeacherProfile = async () => {
       if (!token) return;
 
+      const paths = ["/api/v1/teacher/profile", "/api/teacher/profile"];
+
       try {
         setLoadingUser(true);
 
-        const res = await fetch(`${API_BASE}/api/teacher/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          if (res.status === 401) {
-            logout();
-            return;
+        let data = null;
+        for (const p of paths) {
+          try {
+            const res = await fetch(`${API_BASE}${p}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.status === 401) {
+              logout();
+              return;
+            }
+            if (!res.ok) continue;
+            data = await res.json();
+            if (data && typeof data === "object") break;
+          } catch {
+            /* try next path */
           }
-          // Don't update user state on other errors
-          return;
         }
 
-        const data = await res.json();
+        if (!data) return;
 
-        // reset avatar error if we got a new image
         if (data?.profileImage) {
           setAvatarBroken(false);
         }
 
-        // save to state
-        setUserState((prev) => ({
-          ...(storageUser || {}),
-          ...(prev || {}),
-          ...(data || {}),
-        }));
+        let base = {};
+        try {
+          const raw =
+            localStorage.getItem("bs_user") ||
+            sessionStorage.getItem("bs_user") ||
+            "{}";
+          base = JSON.parse(raw);
+        } catch {
+          base = {};
+        }
+        const merged = { ...base, ...data };
 
-        // ✅ also sync storage so it works after refresh
-        const merged = { ...(storageUser || {}), ...(data || {}) };
+        setUserState(merged);
 
         if (localStorage.getItem("bs_token")) {
           localStorage.setItem("bs_user", JSON.stringify(merged));
         } else if (sessionStorage.getItem("bs_token")) {
           sessionStorage.setItem("bs_user", JSON.stringify(merged));
         }
+
+        window.dispatchEvent(
+          new CustomEvent("bs-user-updated", { detail: merged })
+        );
       } catch (e) {
         console.error("Error fetching teacher profile:", e);
-        // ignore network errors but don't crash
       } finally {
         setLoadingUser(false);
       }
     };
 
-    // Only fetch if we have a token and we're on a teacher route
-    if (token && (location.pathname.startsWith("/teacher") || location.pathname === "/teacher-dashboard")) {
+    if (
+      token &&
+      (location.pathname.startsWith("/teacher") ||
+        location.pathname === "/teacher-dashboard")
+    ) {
       fetchTeacherProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -228,38 +243,47 @@ const NavbarAfterLogin = ({ user: userProp, onMenuToggle }) => {
           </div>
         ) : (
           <div className="tnav__profile" ref={menuRef}>
-            <button
-              type="button"
-              className="tnav__iconBtn"
-              onClick={() => setOpen((v) => !v)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setOpen((v) => !v);
-                }
-              }}
-              aria-label="Open profile menu"
-              aria-expanded={open}
-              aria-haspopup="true"
-            >
-              <span className="tnav__iconCircle">
-                {/* ✅ Show image if exists + not broken, else initials */}
-                {profileImageUrl && !avatarBroken ? (
-                  <img
-                    src={profileImageUrl}
-                    alt="Profile"
-                    className="tnav__avatarImg"
-                    onError={() => setAvatarBroken(true)}
-                  />
-                ) : (
-                  <span className="tnav__initials">{initials}</span>
-                )}
+            <div className="tnav__profileRow">
+              <Link
+                to="/teacher/profile"
+                className="tnav__avatarLinkBtn"
+                aria-label="View profile details"
+                onClick={() => setOpen(false)}
+              >
+                <span className="tnav__iconCircle">
+                  {profileImageUrl && !avatarBroken ? (
+                    <img
+                      src={profileImageUrl}
+                      alt=""
+                      className="tnav__avatarImg"
+                      onError={() => setAvatarBroken(true)}
+                    />
+                  ) : (
+                    <span className="tnav__initials">{initials}</span>
+                  )}
 
-                {loadingUser && <span className="tnav__dot" title="Loading..." />}
-              </span>
-
-              <span className={`tnav__caret ${open ? "rot" : ""}`}>▾</span>
-            </button>
+                  {loadingUser && (
+                    <span className="tnav__dot" title="Loading..." />
+                  )}
+                </span>
+              </Link>
+              <button
+                type="button"
+                className="tnav__caretOnlyBtn"
+                onClick={() => setOpen((v) => !v)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpen((v) => !v);
+                  }
+                }}
+                aria-label="Open account menu"
+                aria-expanded={open}
+                aria-haspopup="true"
+              >
+                <span className={`tnav__caret ${open ? "rot" : ""}`}>▾</span>
+              </button>
+            </div>
 
             {open && (
               <div className="tnav__menu" role="menu" aria-label="User menu">

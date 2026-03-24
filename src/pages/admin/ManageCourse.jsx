@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import AdminSidebar from "./AdminSidebar";
 import "../../styles/admin.css";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ADMIN_COURSE_PAGE_SIZE = 12;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api", "/api/v1"];
@@ -185,6 +189,19 @@ const ManageCourse = () => {
       );
     });
   }, [courses, search]);
+
+  const {
+    page: coursePage,
+    setPage: setCoursePage,
+    totalPages: courseTotalPages,
+    pageItems: pagedCourses,
+    total: courseListTotal,
+    from: courseFrom,
+    to: courseTo,
+  } = useListPagination(filtered, {
+    pageSize: ADMIN_COURSE_PAGE_SIZE,
+    resetDeps: [search],
+  });
 
   // ✅ row click -> course detail page
   const goToCourseDetail = (course) => {
@@ -381,6 +398,14 @@ const ManageCourse = () => {
             />
           </div>
 
+          <ListPaginationBar
+            page={coursePage}
+            totalPages={courseTotalPages}
+            onPageChange={setCoursePage}
+            from={courseFrom}
+            to={courseTo}
+            total={courseListTotal}
+          />
           <table className="user-table" style={{ marginTop: 12 }}>
             <thead>
               <tr>
@@ -401,8 +426,8 @@ const ManageCourse = () => {
                     Loading courses...
                   </td>
                 </tr>
-              ) : filtered.length ? (
-                filtered.map((c) => (
+              ) : courseListTotal ? (
+                pagedCourses.map((c) => (
                   <tr
                     key={c._id}
                     style={{ cursor: "default" }}
@@ -481,6 +506,16 @@ const ManageCourse = () => {
               )}
             </tbody>
           </table>
+          {!loading && courseListTotal > 0 ? (
+            <ListPaginationBar
+              page={coursePage}
+              totalPages={courseTotalPages}
+              onPageChange={setCoursePage}
+              from={courseFrom}
+              to={courseTo}
+              total={courseListTotal}
+            />
+          ) : null}
         </main>
       </div>
 

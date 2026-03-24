@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import AdminSidebar from "./AdminSidebar";
 import "../../styles/admin.css";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ADMIN_ARCHIVED_PAGE_SIZE = 12;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
@@ -28,6 +32,16 @@ const AdminArchivedCourses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const {
+    page: archivedPage,
+    setPage: setArchivedPage,
+    totalPages: archivedTotalPages,
+    pageItems: pagedArchivedCourses,
+    total: archivedListTotal,
+    from: archivedFrom,
+    to: archivedTo,
+  } = useListPagination(courses, { pageSize: ADMIN_ARCHIVED_PAGE_SIZE, resetDeps: [] });
 
   // Protect page
   useEffect(() => {
@@ -111,7 +125,7 @@ const AdminArchivedCourses = () => {
   };
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <Navbar />
 
       <div className="admin-container" style={{ marginTop: "80px" }}>
@@ -227,6 +241,17 @@ const AdminArchivedCourses = () => {
                 boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                 overflow: "hidden"
               }}>
+                <div style={{ padding: "12px 16px 0" }}>
+                  <ListPaginationBar
+                    page={archivedPage}
+                    totalPages={archivedTotalPages}
+                    onPageChange={setArchivedPage}
+                    from={archivedFrom}
+                    to={archivedTo}
+                    total={archivedListTotal}
+                    flushTop
+                  />
+                </div>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{
                     width: "100%",
@@ -256,7 +281,7 @@ const AdminArchivedCourses = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {courses.map((course, index) => {
+                      {pagedArchivedCourses.map((course, index) => {
                         const courseId = course._id || course.id;
                         const teacher = course.teacherId;
                         const teacherName = typeof teacher === "object" 
@@ -333,6 +358,16 @@ const AdminArchivedCourses = () => {
                       })}
                     </tbody>
                   </table>
+                </div>
+                <div style={{ padding: "0 16px 16px" }}>
+                  <ListPaginationBar
+                    page={archivedPage}
+                    totalPages={archivedTotalPages}
+                    onPageChange={setArchivedPage}
+                    from={archivedFrom}
+                    to={archivedTo}
+                    total={archivedListTotal}
+                  />
                 </div>
               </div>
             ) : (

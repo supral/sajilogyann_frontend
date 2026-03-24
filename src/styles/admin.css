@@ -40,54 +40,26 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /*
+    Sticky admin Navbar (.tnav) is in normal document flow.
+    Fixed sidebar aligns to --admin-content-top (navbar height only) on all admin pages.
+  */
+  --admin-nav-h: 76px;
+  --admin-content-top: var(--admin-nav-h);
 }
 
-/* Hamburger Button Bar - Below Navbar */
-.hamburger-bar {
-  position: fixed;
-  top: 80px; /* Admin navbar height */
-  left: 0;
-  right: 0;
-  height: 48px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 18px;
-  z-index: 990; /* Below navbar (1000) but above sidebar (40-50) */
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+@media (min-width: 769px) {
+  .admin-layout {
+    --admin-nav-h: 92px; /* ~80px logo + vertical padding in .tnav */
+  }
 }
-
-.hamburger-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 8px 14px;
-  color: var(--text);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.hamburger-btn:hover {
-  background: rgba(15, 23, 42, 0.06);
-  border-color: rgba(15, 23, 42, 0.18);
-}
-
-.hamburger-btn i {
-  font-size: 16px;
-}
-
 
 /* ---- Main container ---- */
 .admin-container {
   display: flex;
   flex: 1;
-  margin-top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+  margin-top: 0;
+  min-height: 0;
 }
 
 /* =========================
@@ -97,9 +69,9 @@
   width: 280px;
   background: var(--sidebar-bg);
   color: var(--sidebar-text);
-  height: calc(100vh - 128px); /* Navbar (80px) + Hamburger bar (48px) */
+  height: calc(100vh - var(--admin-content-top));
   position: fixed;
-  top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+  top: var(--admin-content-top);
   left: 0;
   padding: 14px 10px;
   overflow-y: auto;
@@ -120,7 +92,8 @@
   margin: 0;
   font-size: 14px;
   font-weight: 800;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.04em;
+  font-family: inherit;
   color: #fff;
 }
 
@@ -171,6 +144,12 @@
   background: transparent;
   border: 1px solid transparent;
 
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+
   transition: background 0.2s ease, border 0.2s ease, transform 0.06s ease;
 }
 
@@ -219,7 +198,7 @@
 .admin-main {
   flex: 1;
   margin-left: 280px;
-  padding: 22px 22px 26px;
+  padding: 16px 20px 24px;
   overflow-y: auto;
 }
 
@@ -489,6 +468,34 @@
   display: inline-block;
 }
 
+/* Admin user / teacher list avatars */
+.admin-person-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(37, 99, 235, 0.1);
+  border: 2px solid rgba(37, 99, 235, 0.2);
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.admin-person-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-person-avatar__initials {
+  font-weight: 900;
+  font-size: 0.85rem;
+  color: var(--primary);
+  user-select: none;
+  line-height: 1;
+}
+
 .user-table {
   width: 100%;
   border-collapse: separate;
@@ -735,15 +742,15 @@
   .admin-sidebar {
     width: 280px;
     max-width: 85vw;
-    top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
-    height: calc(100vh - 128px);
+    top: var(--admin-content-top);
+    height: calc(100vh - var(--admin-content-top));
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
     z-index: 40; /* Below hamburger bar (990) but above overlay (35) */
   }
 
   .admin-main {
     padding: 14px;
-    margin-top: 128px; /* Navbar (80px) + Hamburger bar (48px) */
+    margin-top: 0;
   }
 
   .admin-container {
@@ -775,7 +782,7 @@
 /* Sidebar Overlay for Mobile */
 .admin-sidebar-overlay {
   position: fixed;
-  top: 128px; /* Below navbar and hamburger bar */
+  top: var(--admin-content-top);
   left: 0;
   right: 0;
   bottom: 0;
@@ -797,8 +804,140 @@
 
   .admin-sidebar {
     left: 0 !important;
-    top: 128px !important; /* Navbar (80px) + Hamburger bar (48px) */
-    height: calc(100vh - 128px) !important;
+    top: var(--admin-content-top) !important;
+    height: calc(100vh - var(--admin-content-top)) !important;
     z-index: 40 !important; /* Below hamburger bar (990) but above content */
   }
+}
+
+/* ---- Admin course detail: chapters / lessons / case studies / MCQs ---- */
+.admin-course-summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.admin-course-summary-pill {
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 12px;
+  padding: 10px 14px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-course-summary-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.admin-course-summary-pill strong {
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.admin-chapter-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.admin-chapter-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.admin-chapter-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 800;
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.admin-chapter-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-chapter-title {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.admin-chapter-meta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.admin-lesson-table-wrap {
+  overflow-x: auto;
+  padding: 0 12px 12px;
+}
+
+.admin-lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-lesson-table th,
+.admin-lesson-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.admin-lesson-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.admin-lesson-idx {
+  opacity: 0.6;
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.admin-lesson-id {
+  font-size: 11px;
+  background: rgba(15, 23, 42, 0.06);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.admin-badge--yes {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+.admin-badge--no {
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--muted);
 }

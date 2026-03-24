@@ -4,6 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../components/Navbar";
 import AdminSidebar from "./AdminSidebar";
 import "../../styles/admin.css";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const USER_DETAIL_PAGE_SIZE = 8;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
@@ -56,6 +60,19 @@ export default function UserDetail() {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [marks, setMarks] = useState([]);
   const [recentMcqs, setRecentMcqs] = useState([]);
+
+  const enrollPg = useListPagination(enrolledCourses, {
+    pageSize: USER_DETAIL_PAGE_SIZE,
+    resetDeps: [id],
+  });
+  const marksPg = useListPagination(marks, {
+    pageSize: USER_DETAIL_PAGE_SIZE,
+    resetDeps: [id],
+  });
+  const mcqPg = useListPagination(recentMcqs, {
+    pageSize: USER_DETAIL_PAGE_SIZE,
+    resetDeps: [id],
+  });
 
   const token = getToken();
 
@@ -180,30 +197,58 @@ export default function UserDetail() {
               {/* ENROLLMENTS */}
               <div className="detail-section" style={{ marginBottom: 18 }}>
                 <h3>📚 Course Enrollments</h3>
-                {enrolledCourses.length === 0 ? (
+                {enrollPg.total === 0 ? (
                   <p style={{ opacity: 0.8 }}>No enrollment data available (no MCQ attempts yet).</p>
                 ) : (
-                  <ul style={{ marginTop: 10 }}>
-                    {enrolledCourses.map((c, idx) => (
-                      <li key={c.courseId || c._id || idx}>
-                        <b>{c.title || c.courseName || "Course"}</b>{" "}
-                        {typeof c.progressPercent === "number"
-                          ? `— ${c.progressPercent}%`
-                          : ""}
-                        {c.status ? ` (${c.status})` : ""}
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <ListPaginationBar
+                      page={enrollPg.page}
+                      totalPages={enrollPg.totalPages}
+                      onPageChange={enrollPg.setPage}
+                      from={enrollPg.from}
+                      to={enrollPg.to}
+                      total={enrollPg.total}
+                      flushTop
+                    />
+                    <ul style={{ marginTop: 10 }}>
+                      {enrollPg.pageItems.map((c, idx) => (
+                        <li key={c.courseId || c._id || idx}>
+                          <b>{c.title || c.courseName || "Course"}</b>{" "}
+                          {typeof c.progressPercent === "number"
+                            ? `— ${c.progressPercent}%`
+                            : ""}
+                          {c.status ? ` (${c.status})` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                    <ListPaginationBar
+                      page={enrollPg.page}
+                      totalPages={enrollPg.totalPages}
+                      onPageChange={enrollPg.setPage}
+                      from={enrollPg.from}
+                      to={enrollPg.to}
+                      total={enrollPg.total}
+                    />
+                  </>
                 )}
               </div>
 
               {/* MARKS */}
               <div className="detail-section" style={{ marginBottom: 18 }}>
                 <h3>📈 Marks / Scores</h3>
-                {marks.length === 0 ? (
+                {marksPg.total === 0 ? (
                   <p style={{ opacity: 0.8 }}>No marks data available (no MCQ attempts yet).</p>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
+                    <ListPaginationBar
+                      page={marksPg.page}
+                      totalPages={marksPg.totalPages}
+                      onPageChange={marksPg.setPage}
+                      from={marksPg.from}
+                      to={marksPg.to}
+                      total={marksPg.total}
+                      flushTop
+                    />
                     <table className="user-table" style={{ width: "100%" }}>
                       <thead>
                         <tr>
@@ -214,7 +259,7 @@ export default function UserDetail() {
                         </tr>
                       </thead>
                       <tbody>
-                        {marks.map((m, idx) => (
+                        {marksPg.pageItems.map((m, idx) => (
                           <tr key={m.courseId || idx}>
                             <td>{m.courseTitle || m.courseName || "-"}</td>
                             <td>{m.scorePercent ?? "-"}</td>
@@ -231,10 +276,19 @@ export default function UserDetail() {
               {/* RECENT MCQS */}
               <div className="detail-section" style={{ marginBottom: 18 }}>
                 <h3>🧩 Recent MCQ Attempts</h3>
-                {recentMcqs.length === 0 ? (
+                {mcqPg.total === 0 ? (
                   <p style={{ opacity: 0.8 }}>No attempts found.</p>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
+                    <ListPaginationBar
+                      page={mcqPg.page}
+                      totalPages={mcqPg.totalPages}
+                      onPageChange={mcqPg.setPage}
+                      from={mcqPg.from}
+                      to={mcqPg.to}
+                      total={mcqPg.total}
+                      flushTop
+                    />
                     <table className="user-table" style={{ width: "100%" }}>
                       <thead>
                         <tr>
@@ -246,7 +300,7 @@ export default function UserDetail() {
                         </tr>
                       </thead>
                       <tbody>
-                        {recentMcqs.map((a, idx) => (
+                        {mcqPg.pageItems.map((a, idx) => (
                           <tr key={idx}>
                             <td>{a.courseName || "-"}</td>
                             <td>{a.chapterName || "-"}</td>
@@ -261,6 +315,14 @@ export default function UserDetail() {
                         ))}
                       </tbody>
                     </table>
+                    <ListPaginationBar
+                      page={mcqPg.page}
+                      totalPages={mcqPg.totalPages}
+                      onPageChange={mcqPg.setPage}
+                      from={mcqPg.from}
+                      to={mcqPg.to}
+                      total={mcqPg.total}
+                    />
                   </div>
                 )}
               </div>

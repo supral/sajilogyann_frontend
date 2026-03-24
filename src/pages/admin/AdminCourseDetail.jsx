@@ -70,6 +70,7 @@ const normalizeCourse = (c) => {
 
 const normalizeChapter = (ch, idx) => {
   const title =
+    ch.chapterName ||
     ch.title ||
     ch.name ||
     ch.chapterTitle ||
@@ -130,6 +131,8 @@ export default function AdminCourseDetail() {
 
   const [course, setCourse] = useState(stateCourse ? normalizeCourse(stateCourse) : null);
   const [chapters, setChapters] = useState([]);
+  const [chapterGroups, setChapterGroups] = useState([]);
+  const [inlineMcqTotal, setInlineMcqTotal] = useState(0);
   const [quizzes, setQuizzes] = useState([]);
 
   const handleMenuClick = (secId) => {
@@ -159,13 +162,18 @@ export default function AdminCourseDetail() {
       // from FULL endpoint:
       const chList = Array.isArray(data.chapters) ? data.chapters : (c.chapters || c.lessons || []);
       const qList = Array.isArray(data.quizzes) ? data.quizzes : [];
+      const groups = Array.isArray(data.chapterGroups) ? data.chapterGroups : [];
 
       setChapters((Array.isArray(chList) ? chList : []).map(normalizeChapter));
+      setChapterGroups(groups);
+      setInlineMcqTotal(Number(data.inlineMcqTotal) || 0);
       setQuizzes((Array.isArray(qList) ? qList : []).map(normalizeQuiz));
     } catch (e) {
       setErr(e?.message || "Failed to load course");
       setCourse(null);
       setChapters([]);
+      setChapterGroups([]);
+      setInlineMcqTotal(0);
       setQuizzes([]);
     } finally {
       setLoading(false);
@@ -213,7 +221,7 @@ export default function AdminCourseDetail() {
                 Course Details
               </h2>
               <p style={{ marginTop: 0, opacity: 0.8 }}>
-                Full course data (course info, chapters/lessons, quizzes).
+                Chapters, lessons, case-study uploads, and MCQs per chapter.
               </p>
             </div>
 
@@ -263,11 +271,105 @@ export default function AdminCourseDetail() {
                   ) : null}
                 </div>
 
-                {/* CHAPTERS */}
-                <div className="detail-section">
-                  <h3>📚 Chapters / Lessons</h3>
+                {/* Summary */}
+                <div className="detail-section admin-course-structure-summary">
+                  <h3>📊 Content overview</h3>
+                  <div className="admin-course-summary-grid">
+                    <div className="admin-course-summary-pill">
+                      <span className="admin-course-summary-label">Chapters</span>
+                      <strong>{chapterGroups.length || (chapters.length ? 1 : 0)}</strong>
+                    </div>
+                    <div className="admin-course-summary-pill">
+                      <span className="admin-course-summary-label">Lessons</span>
+                      <strong>
+                        {chapterGroups.reduce((s, g) => s + (g.totalLessons || 0), 0) ||
+                          chapters.length}
+                      </strong>
+                    </div>
+                    <div className="admin-course-summary-pill">
+                      <span className="admin-course-summary-label">Case studies uploaded</span>
+                      <strong>
+                        {chapterGroups.reduce((s, g) => s + (g.lessonsWithCaseStudy || 0), 0)}
+                      </strong>
+                    </div>
+                    <div className="admin-course-summary-pill">
+                      <span className="admin-course-summary-label">Quiz questions (in lessons)</span>
+                      <strong>{inlineMcqTotal}</strong>
+                    </div>
+                  </div>
+                </div>
 
-                  {chapters.length ? (
+                {/* CHAPTERS → lessons, case study, MCQs */}
+                <div className="detail-section">
+                  <h3>📚 By chapter: lessons, case studies &amp; quizzes</h3>
+                  <p style={{ marginTop: 0, opacity: 0.75, fontSize: 14 }}>
+                    Each row is one uploaded lesson. Case study = file on that lesson. Quiz count = MCQs saved on that lesson.
+                  </p>
+
+                  {chapterGroups.length ? (
+                    <div className="admin-chapter-groups">
+                      {chapterGroups.map((g) => (
+                        <details
+                          key={g.chapterName}
+                          className="admin-chapter-card"
+                          open
+                        >
+                          <summary className="admin-chapter-summary">
+                            <span className="admin-chapter-title">{g.chapterName}</span>
+                            <span className="admin-chapter-meta">
+                              {g.totalLessons || 0} lesson(s) ·{" "}
+                              {g.lessonsWithCaseStudy || 0}{" "}
+                              {(g.lessonsWithCaseStudy || 0) === 1 ? "case study" : "case studies"} ·{" "}
+                              {g.totalMcqs || 0} MCQ{(g.totalMcqs || 0) === 1 ? "" : "s"}
+                            </span>
+                          </summary>
+
+                          <div className="admin-lesson-table-wrap">
+                            <table className="admin-lesson-table">
+                              <thead>
+                                <tr>
+                                  <th>Lesson</th>
+                                  <th>Description</th>
+                                  <th>Media / files</th>
+                                  <th>Case study</th>
+                                  <th>Quiz (MCQs)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(g.lessons || []).map((row, i) => (
+                                  <tr key={row._id || i}>
+                                    <td>
+                                      <span className="admin-lesson-idx">#{i + 1}</span>
+                                      <code className="admin-lesson-id">
+                                        {row._id ? String(row._id).slice(-8) : "—"}
+                                      </code>
+                                    </td>
+                                    <td>
+                                      {row.description
+                                        ? row.description.slice(0, 160) +
+                                          (row.description.length > 160 ? "…" : "")
+                                        : "—"}
+                                    </td>
+                                    <td>{row.materialCount != null ? row.materialCount : "—"}</td>
+                                    <td>
+                                      {row.hasCaseStudy ? (
+                                        <span className="admin-badge admin-badge--yes">Uploaded</span>
+                                      ) : (
+                                        <span className="admin-badge admin-badge--no">None</span>
+                                      )}
+                                    </td>
+                                    <td>
+                                      <strong>{row.mcqCount ?? 0}</strong>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  ) : chapters.length ? (
                     <ul style={{ marginTop: 8 }}>
                       {chapters.map((ch) => (
                         <li key={ch._id} style={{ marginBottom: 12 }}>
@@ -275,7 +377,6 @@ export default function AdminCourseDetail() {
                           <div style={{ opacity: 0.75, fontSize: 13 }}>
                             {ch.files.length ? `${ch.files.length} file(s)` : "No files"}
                           </div>
-
                           {ch.files.length ? (
                             <ul style={{ marginTop: 6, paddingLeft: 16 }}>
                               {ch.files.map((f, idx) => (
@@ -293,14 +394,17 @@ export default function AdminCourseDetail() {
                   )}
                 </div>
 
-                {/* QUIZZES */}
+                {/* Separate quiz documents (if any) */}
                 <div className="detail-section">
-                  <h3>🧩 Quizzes / MCQs</h3>
+                  <h3>🧩 Standalone quiz records</h3>
+                  <p style={{ marginTop: 0, opacity: 0.75, fontSize: 14 }}>
+                    Extra quiz documents linked to this course (if your DB uses a separate collection). Lesson MCQs are counted above.
+                  </p>
 
                   {quizzes.length ? (
                     <div style={{ marginTop: 8 }}>
                       <p style={{ marginTop: 0 }}>
-                        Total quizzes/MCQs: <strong>{quizzes.length}</strong>
+                        Records: <strong>{quizzes.length}</strong>
                       </p>
                       <ul style={{ marginTop: 8 }}>
                         {quizzes.map((q) => (
@@ -316,7 +420,7 @@ export default function AdminCourseDetail() {
                       </ul>
                     </div>
                   ) : (
-                    <div style={{ opacity: 0.8 }}>No quizzes/MCQs found for this course.</div>
+                    <div style={{ opacity: 0.8 }}>No separate quiz records for this course.</div>
                   )}
                 </div>
 

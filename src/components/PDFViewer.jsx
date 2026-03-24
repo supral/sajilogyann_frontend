@@ -1,13 +1,56 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-export default function PDFViewer({ url, fileName }) {
+/**
+ * @param {object} props
+ * @param {string} props.url
+ * @param {string} [props.fileName]
+ * @param {"default"|"embedded"} [props.variant]
+ * @param {boolean} [props.hideBuiltInPageControls]
+ * @param {boolean} [props.showZoom]
+ * @param {number} [props.page] — controlled page (1-based), use with onPageChange
+ * @param {(p: number) => void} [props.onPageChange]
+ * @param {(n: number) => void} [props.onNumPagesReady]
+ */
+export default function PDFViewer({
+  url,
+  fileName,
+  variant = "default",
+  hideBuiltInPageControls = false,
+  showZoom = true,
+  page: controlledPage,
+  onPageChange,
+  onNumPagesReady,
+}) {
   const [numPages, setNumPages] = useState(null);
-  const [page, setPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pdfDoc, setPdfDoc] = useState(null);
   const canvasRef = useRef(null);
-  const [scale, setScale] = useState(1.5);
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(variant === "embedded" ? 1 : 1.5);
+
+  const isControlled =
+    controlledPage !== undefined && typeof onPageChange === "function";
+  const page = isControlled ? controlledPage : internalPage;
+
+  const onNumPagesReadyRef = useRef(onNumPagesReady);
+  onNumPagesReadyRef.current = onNumPagesReady;
+
+  const setPage = useCallback(
+    (next) => {
+      if (isControlled) {
+        const p =
+          typeof next === "function" ? next(controlledPage) : next;
+        onPageChange(p);
+      } else {
+        setInternalPage((prev) =>
+          typeof next === "function" ? next(prev) : next
+        );
+      }
+    },
+    [isControlled, onPageChange, controlledPage]
+  );
 
   // Load PDF.js from CDN
   useEffect(() => {
@@ -39,6 +82,7 @@ export default function PDFViewer({ url, fileName }) {
         
         setPdfDoc(pdf);
         setNumPages(pdf.numPages);
+        onNumPagesReadyRef.current?.(pdf.numPages);
         setLoading(false);
       } catch (err) {
         console.error("PDF load error:", err);
@@ -51,6 +95,41 @@ export default function PDFViewer({ url, fileName }) {
       loadDocument();
     }
   }, [url]);
+
+  useEffect(() => {
+    if (isControlled) return;
+    setInternalPage(1);
+  }, [url, isControlled]);
+
+  useEffect(() => {
+    if (!isControlled || numPages == null || !onPageChange) return;
+    if (controlledPage < 1) onPageChange(1);
+    else if (controlledPage > numPages) onPageChange(numPages);
+  }, [isControlled, numPages, controlledPage, onPageChange]);
+
+  // Fit width inside container (embedded lesson view)
+  useEffect(() => {
+    if (variant !== "embedded" || !pdfDoc || !containerRef.current) return;
+
+    const el = containerRef.current;
+
+    const fit = async () => {
+      try {
+        const pdfPage = await pdfDoc.getPage(page);
+        const base = pdfPage.getViewport({ scale: 1 });
+        const w = Math.max(el.clientWidth - 16, 120);
+        const nextScale = Math.min(Math.max(w / base.width, 0.35), 3);
+        setScale(nextScale);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    fit();
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [variant, pdfDoc, page]);
 
   // Render current page
   useEffect(() => {
@@ -84,21 +163,38 @@ export default function PDFViewer({ url, fileName }) {
   };
 
   const goToNextPage = () => {
-    if (page < numPages) setPage(page + 1);
+    if (numPages && page < numPages) setPage(page + 1);
   };
 
+  const outerStyle =
+    variant === "embedded"
+      ? {
+          display: "flex",
+          flexDirection: "column",
+          gap: hideBuiltInPageControls ? 0 : 12,
+          alignItems: "stretch",
+          width: "100%",
+          flex: 1,
+          minHeight: 0,
+          padding: 0,
+          background: "transparent",
+          borderRadius: 0,
+        }
+      : {
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          alignItems: "center",
+          width: "100%",
+          padding: "20px",
+          background: "#f8fafc",
+          borderRadius: "16px",
+        };
+
   return (
-    <div style={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      gap: 16, 
-      alignItems: "center",
-      width: "100%",
-      padding: "20px",
-      background: "#f8fafc",
-      borderRadius: "16px"
-    }}>
+    <div style={outerStyle}>
       {/* Header */}
+      {!hideBuiltInPageControls && (
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -133,8 +229,40 @@ export default function PDFViewer({ url, fileName }) {
           📥 Download
         </a>
       </div>
+      )}
+
+      {hideBuiltInPageControls && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            flexShrink: 0,
+            marginBottom: 8,
+          }}
+        >
+          <a
+            href={url}
+            download
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              padding: "6px 12px",
+              background: "#f1f5f9",
+              color: "#475569",
+              textDecoration: "none",
+              borderRadius: "8px",
+              fontWeight: 500,
+              fontSize: "0.8rem",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            📥 Download
+          </a>
+        </div>
+      )}
 
       {/* Navigation Controls - Top */}
+      {!hideBuiltInPageControls && (
       <div style={{ 
         display: "flex", 
         gap: 16, 
@@ -192,8 +320,10 @@ export default function PDFViewer({ url, fileName }) {
           Next →
         </button>
       </div>
+      )}
 
       {/* Zoom Controls */}
+      {!hideBuiltInPageControls && showZoom && (
       <div style={{ 
         display: "flex", 
         gap: 8, 
@@ -229,9 +359,10 @@ export default function PDFViewer({ url, fileName }) {
           +
         </button>
       </div>
+      )}
 
       {/* Progress bar */}
-      {numPages && (
+      {!hideBuiltInPageControls && numPages && (
         <div style={{ 
           width: "100%", 
           maxWidth: "500px",
@@ -252,17 +383,34 @@ export default function PDFViewer({ url, fileName }) {
 
       {/* PDF Viewer Container - Fixed size, no scroll, like PPT */}
       <div
-        style={{
-          width: "min(900px, 95vw)",
-          height: "min(550px, 65vh)",
-          display: "grid",
-          placeItems: "center",
-          border: "1px solid #e2e8f0",
-          borderRadius: 16,
-          overflow: "hidden",
-          background: "#fff",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.1)"
-        }}
+        ref={containerRef}
+        style={
+          variant === "embedded"
+            ? {
+                flex: 1,
+                minHeight: 0,
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                borderRadius: 8,
+                overflow: "auto",
+                background: "#fff",
+                boxSizing: "border-box",
+              }
+            : {
+                width: "min(900px, 95vw)",
+                height: "min(550px, 65vh)",
+                display: "grid",
+                placeItems: "center",
+                border: "1px solid #e2e8f0",
+                borderRadius: 16,
+                overflow: "hidden",
+                background: "#fff",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+              }
+        }
       >
         {/* Loading state */}
         {loading && !error && (
@@ -313,18 +461,21 @@ export default function PDFViewer({ url, fileName }) {
 
         {/* Canvas for PDF rendering - ONE page at a time */}
         {!loading && !error && (
-          <canvas 
-            ref={canvasRef} 
-            style={{ 
-              maxWidth: "100%", 
-              maxHeight: "100%",
-              objectFit: "contain"
-            }} 
+          <canvas
+            ref={canvasRef}
+            style={{
+              maxWidth: "100%",
+              maxHeight: variant === "embedded" ? "none" : "100%",
+              height: "auto",
+              objectFit: "contain",
+              display: "block",
+            }}
           />
         )}
       </div>
 
       {/* Bottom Navigation - for easier access */}
+      {!hideBuiltInPageControls && (
       <div style={{ 
         display: "flex", 
         gap: 20, 
@@ -371,6 +522,7 @@ export default function PDFViewer({ url, fileName }) {
           Next →
         </button>
       </div>
+      )}
     </div>
   );
 }

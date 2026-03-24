@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import StudentPageLayout from "./StudentPageLayout";
 import { useNavigate } from "react-router-dom";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ARCHIVED_COURSES_PAGE_SIZE = 8;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const ARCHIVED_COURSES_ENDPOINTS = [
@@ -30,6 +34,16 @@ export default function StudentArchivedCourses() {
   const [refreshing, setRefreshing] = useState(false);
   const [unarchivingId, setUnarchivingId] = useState(null);
   const navigate = useNavigate();
+
+  const {
+    page: acPage,
+    setPage: setAcPage,
+    totalPages: acTotalPages,
+    pageItems: pagedArchivedCourses,
+    total: acListTotal,
+    from: acFrom,
+    to: acTo,
+  } = useListPagination(courses, { pageSize: ARCHIVED_COURSES_PAGE_SIZE, resetDeps: [] });
 
   const fetchArchivedCourses = async (isRefresh = false) => {
     if (isRefresh) {
@@ -360,7 +374,16 @@ export default function StudentArchivedCourses() {
       )}
 
       {/* Courses list */}
-      {!loading && !error && courses.length > 0 && (
+      {!loading && !error && acListTotal > 0 && (
+        <div>
+          <ListPaginationBar
+            page={acPage}
+            totalPages={acTotalPages}
+            onPageChange={setAcPage}
+            from={acFrom}
+            to={acTo}
+            total={acListTotal}
+          />
         <div
           style={{
             display: "flex",
@@ -368,7 +391,7 @@ export default function StudentArchivedCourses() {
             gap: "1rem",
           }}
         >
-          {courses.map((course) => {
+          {pagedArchivedCourses.map((course) => {
             const isUnarchiving = unarchivingId === course.id;
 
             return (
@@ -498,6 +521,15 @@ export default function StudentArchivedCourses() {
               </div>
             );
           })}
+        </div>
+        <ListPaginationBar
+          page={acPage}
+          totalPages={acTotalPages}
+          onPageChange={setAcPage}
+          from={acFrom}
+          to={acTo}
+          total={acListTotal}
+        />
         </div>
       )}
     </StudentPageLayout>

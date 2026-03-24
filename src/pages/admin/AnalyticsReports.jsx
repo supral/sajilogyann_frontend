@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import Navbar from "../../components/Navbar";
 import AdminSidebar from "./AdminSidebar";
 import "../../styles/admin.css";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const REPORT_TABLE_PAGE_SIZE = 15;
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 const API_PREFIXES = ["/api", "/api/v1"];
@@ -172,6 +176,23 @@ const AnalyticsReports = () => {
     });
   }, [lessonsCombined, qLessons]);
 
+  const studentsPg = useListPagination(studentsFiltered, {
+    pageSize: REPORT_TABLE_PAGE_SIZE,
+    resetDeps: [qStudents],
+  });
+  const teachersPg = useListPagination(teachersFiltered, {
+    pageSize: REPORT_TABLE_PAGE_SIZE,
+    resetDeps: [qTeachers],
+  });
+  const coursesPg = useListPagination(coursesFiltered, {
+    pageSize: REPORT_TABLE_PAGE_SIZE,
+    resetDeps: [qCourses],
+  });
+  const lessonsPg = useListPagination(lessonsFiltered, {
+    pageSize: REPORT_TABLE_PAGE_SIZE,
+    resetDeps: [qLessons],
+  });
+
   return (
     <div className={`admin-layout ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
       <Navbar />
@@ -217,6 +238,14 @@ const AnalyticsReports = () => {
               onChange={(e) => setQStudents(e.target.value)}
             />
 
+            <ListPaginationBar
+              page={studentsPg.page}
+              totalPages={studentsPg.totalPages}
+              onPageChange={studentsPg.setPage}
+              from={studentsPg.from}
+              to={studentsPg.to}
+              total={studentsPg.total}
+            />
             <table className="user-table">
               <thead>
                 <tr>
@@ -229,8 +258,8 @@ const AnalyticsReports = () => {
               <tbody>
                 {loading ? (
                   <tr><td colSpan="4" style={{ textAlign: "center", padding: 16 }}>Loading...</td></tr>
-                ) : studentsFiltered.length ? (
-                  studentsFiltered.map((u) => (
+                ) : studentsPg.total ? (
+                  studentsPg.pageItems.map((u) => (
                     <tr key={u._id}>
                       <td>{u.name || "-"}</td>
                       <td>{u.email || "-"}</td>
@@ -243,6 +272,16 @@ const AnalyticsReports = () => {
                 )}
               </tbody>
             </table>
+            {!loading && studentsPg.total > 0 ? (
+              <ListPaginationBar
+                page={studentsPg.page}
+                totalPages={studentsPg.totalPages}
+                onPageChange={studentsPg.setPage}
+                from={studentsPg.from}
+                to={studentsPg.to}
+                total={studentsPg.total}
+              />
+            ) : null}
           </div>
 
           {/* ✅ TEACHERS */}
@@ -255,6 +294,14 @@ const AnalyticsReports = () => {
               onChange={(e) => setQTeachers(e.target.value)}
             />
 
+            <ListPaginationBar
+              page={teachersPg.page}
+              totalPages={teachersPg.totalPages}
+              onPageChange={teachersPg.setPage}
+              from={teachersPg.from}
+              to={teachersPg.to}
+              total={teachersPg.total}
+            />
             <table className="user-table">
               <thead>
                 <tr>
@@ -267,8 +314,8 @@ const AnalyticsReports = () => {
               <tbody>
                 {loading ? (
                   <tr><td colSpan="4" style={{ textAlign: "center", padding: 16 }}>Loading...</td></tr>
-                ) : teachersFiltered.length ? (
-                  teachersFiltered.map((u) => (
+                ) : teachersPg.total ? (
+                  teachersPg.pageItems.map((u) => (
                     <tr key={u._id}>
                       <td>{u.name || "-"}</td>
                       <td>{u.email || "-"}</td>
@@ -281,6 +328,16 @@ const AnalyticsReports = () => {
                 )}
               </tbody>
             </table>
+            {!loading && teachersPg.total > 0 ? (
+              <ListPaginationBar
+                page={teachersPg.page}
+                totalPages={teachersPg.totalPages}
+                onPageChange={teachersPg.setPage}
+                from={teachersPg.from}
+                to={teachersPg.to}
+                total={teachersPg.total}
+              />
+            ) : null}
           </div>
 
           {/* ✅ COURSES */}
@@ -293,6 +350,14 @@ const AnalyticsReports = () => {
               onChange={(e) => setQCourses(e.target.value)}
             />
 
+            <ListPaginationBar
+              page={coursesPg.page}
+              totalPages={coursesPg.totalPages}
+              onPageChange={coursesPg.setPage}
+              from={coursesPg.from}
+              to={coursesPg.to}
+              total={coursesPg.total}
+            />
             <table className="user-table">
               <thead>
                 <tr>
@@ -306,8 +371,8 @@ const AnalyticsReports = () => {
               <tbody>
                 {loading ? (
                   <tr><td colSpan="5" style={{ textAlign: "center", padding: 16 }}>Loading...</td></tr>
-                ) : coursesFiltered.length ? (
-                  coursesFiltered.map((c) => (
+                ) : coursesPg.total ? (
+                  coursesPg.pageItems.map((c) => (
                     <tr key={c._id}>
                       <td>{c.title}</td>
                       <td>{c.category}</td>
@@ -321,6 +386,16 @@ const AnalyticsReports = () => {
                 )}
               </tbody>
             </table>
+            {!loading && coursesPg.total > 0 ? (
+              <ListPaginationBar
+                page={coursesPg.page}
+                totalPages={coursesPg.totalPages}
+                onPageChange={coursesPg.setPage}
+                from={coursesPg.from}
+                to={coursesPg.to}
+                total={coursesPg.total}
+              />
+            ) : null}
           </div>
 
           {/* ✅ LESSONS / CHAPTERS */}
@@ -333,6 +408,14 @@ const AnalyticsReports = () => {
               onChange={(e) => setQLessons(e.target.value)}
             />
 
+            <ListPaginationBar
+              page={lessonsPg.page}
+              totalPages={lessonsPg.totalPages}
+              onPageChange={lessonsPg.setPage}
+              from={lessonsPg.from}
+              to={lessonsPg.to}
+              total={lessonsPg.total}
+            />
             <table className="user-table">
               <thead>
                 <tr>
@@ -346,8 +429,8 @@ const AnalyticsReports = () => {
               <tbody>
                 {loading ? (
                   <tr><td colSpan="5" style={{ textAlign: "center", padding: 16 }}>Loading...</td></tr>
-                ) : lessonsFiltered.length ? (
-                  lessonsFiltered.map((l) => (
+                ) : lessonsPg.total ? (
+                  lessonsPg.pageItems.map((l) => (
                     <tr key={l._id}>
                       <td>{l.__type}</td>
                       <td>{l.chapterName || "-"}</td>
@@ -361,6 +444,16 @@ const AnalyticsReports = () => {
                 )}
               </tbody>
             </table>
+            {!loading && lessonsPg.total > 0 ? (
+              <ListPaginationBar
+                page={lessonsPg.page}
+                totalPages={lessonsPg.totalPages}
+                onPageChange={lessonsPg.setPage}
+                from={lessonsPg.from}
+                to={lessonsPg.to}
+                total={lessonsPg.total}
+              />
+            ) : null}
           </div>
         </main>
       </div>

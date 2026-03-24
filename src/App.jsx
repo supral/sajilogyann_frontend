@@ -1,69 +1,66 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { lazy, Suspense, useMemo, useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import About from "./pages/about";
-import PublicCourseDetail from "./pages/PublicCourseDetail";
-import Courses from "./pages/Courses";
-import Contact from "./pages/Contact";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import Terms from "./pages/Terms";
-import FAQ from "./pages/FAQ";
-import Academy from "./pages/Academy";
-import StudentDashboard from "./pages/student/StudentDashboard";
-import StudentProfile from "./pages/student/StudentProfile";
-import ChangePassword from "./pages/student/ChangePassword";
-import AcademyPro from "./pages/student/AcademyPro";
-import StudentCourseDetail from "./pages/student/StudentCourseDetail";
-import StudentFileViewer from "./pages/student/StudentFileViewer";
-import StudentLessonViewer from "./pages/student/StudentLessonViewer";
-import MCQTest from "./pages/student/MCQTest";
-import HowToGetCertificate from "./pages/student/HowToGetCertificate";
-
-import TeacherDashboard from "./pages/teacher/TeacherDashboard";
-import TeacherProfile from "./pages/teacher/TeacherProfile";
-import CreateCourse from "./pages/teacher/CreateCourse";
-import ViewCourses from "./pages/teacher/ViewCourses";
-import ArchivedCourses from "./pages/teacher/ArchivedCourses";
-import CourseDetail from "./pages/teacher/CourseDetail";
-import CreateMCQ from "./pages/teacher/CreateMCQ";
-import Reports from "./pages/teacher/Reports";
-import CreateLesson from "./pages/teacher/CreateLesson";
-import LessonDetail from "./pages/teacher/LessonDetail";
-import EditLessonDetail from "./pages/teacher/EditLessonDetail";
-
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ManageTeacher from "./pages/admin/ManageTeacher";
-import ManageCourse from "./pages/admin/ManageCourse";
-import ManageQuiz from "./pages/admin/ManageQuiz";
-import ManageCaseStudy from "./pages/admin/ManageCaseStudy";
-import AnalyticsReports from "./pages/admin/AnalyticsReports";
-import UserDetail from "./pages/admin/UserDetail";
-import ManageUsers from "./pages/admin/ManageUsers";
-import AdminCourseDetail from "./pages/admin/AdminCourseDetail";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminArchivedCourses from "./pages/admin/AdminArchivedCourses";
-import EnrolledCourses from "./pages/student/EnrolledCourses";
-import StudentArchivedCourses from "./pages/student/ArchivedCourses";
-import Assignments from "./pages/student/Assignments";
-import ProgressTracker from "./pages/student/ProgressTracker";
-import PracticeQuizzes from "./pages/student/PracticeQuizzes";
-import Certificates from "./pages/student/Certificates";
-import Notifications from "./pages/student/Notifications";
-import ProtectedRoute from "./routes/ProtectedRoute";
-
-// ✅ payment
-import KhaltiReturn from "./pages/payment/KhaltiReturn";
-
-// ✅ maintenance
-import Maintenance from "./pages/Maintenance";
 import MaintenanceWatcher from "./components/MaintenanceWatcher";
-
-// ✅ error pages
-import NotFound from "./pages/errors/NotFound";
-import Unauthorized from "./pages/errors/Unauthorized";
+import ProtectedRoute from "./routes/ProtectedRoute";
 import { useAppLogo } from "./hooks/useAppLogo.js";
+
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+const About = lazy(() => import("./pages/about"));
+const PublicCourseDetail = lazy(() => import("./pages/PublicCourseDetail"));
+const Courses = lazy(() => import("./pages/Courses"));
+const Contact = lazy(() => import("./pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Academy = lazy(() => import("./pages/Academy"));
+const StudentDashboard = lazy(() => import("./pages/student/StudentDashboard"));
+const StudentProfile = lazy(() => import("./pages/student/StudentProfile"));
+const ChangePassword = lazy(() => import("./pages/student/ChangePassword"));
+const AcademyPro = lazy(() => import("./pages/student/AcademyPro"));
+const StudentCourseDetail = lazy(() => import("./pages/student/StudentCourseDetail"));
+const StudentFileViewer = lazy(() => import("./pages/student/StudentFileViewer"));
+const StudentLessonViewer = lazy(() => import("./pages/student/StudentLessonViewer"));
+const MCQTest = lazy(() => import("./pages/student/MCQTest"));
+const HowToGetCertificate = lazy(() => import("./pages/student/HowToGetCertificate"));
+const TeacherDashboard = lazy(() => import("./pages/teacher/TeacherDashboard"));
+const TeacherProfile = lazy(() => import("./pages/teacher/TeacherProfile"));
+const CreateCourse = lazy(() => import("./pages/teacher/CreateCourse"));
+const ViewCourses = lazy(() => import("./pages/teacher/ViewCourses"));
+const ArchivedCourses = lazy(() => import("./pages/teacher/ArchivedCourses"));
+const CourseDetail = lazy(() => import("./pages/teacher/CourseDetail"));
+const CreateMCQ = lazy(() => import("./pages/teacher/CreateMCQ"));
+const Reports = lazy(() => import("./pages/teacher/Reports"));
+const CreateLesson = lazy(() => import("./pages/teacher/CreateLesson"));
+const LessonDetail = lazy(() => import("./pages/teacher/LessonDetail"));
+const EditLessonDetail = lazy(() => import("./pages/teacher/EditLessonDetail"));
+const TeacherStudentDetail = lazy(() => import("./pages/teacher/TeacherStudentDetail"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const ManageTeacher = lazy(() => import("./pages/admin/ManageTeacher"));
+const ManageCourse = lazy(() => import("./pages/admin/ManageCourse"));
+const ManageQuiz = lazy(() => import("./pages/admin/ManageQuiz"));
+const ManageCaseStudy = lazy(() => import("./pages/admin/ManageCaseStudy"));
+const AnalyticsReports = lazy(() => import("./pages/admin/AnalyticsReports"));
+const UserDetail = lazy(() => import("./pages/admin/UserDetail"));
+const ManageUsers = lazy(() => import("./pages/admin/ManageUsers"));
+const AdminCourseDetail = lazy(() => import("./pages/admin/AdminCourseDetail"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminArchivedCourses = lazy(() => import("./pages/admin/AdminArchivedCourses"));
+const EnrolledCourses = lazy(() => import("./pages/student/EnrolledCourses"));
+const StudentArchivedCourses = lazy(() => import("./pages/student/ArchivedCourses"));
+const Assignments = lazy(() => import("./pages/student/Assignments"));
+const ProgressTracker = lazy(() => import("./pages/student/ProgressTracker"));
+const PracticeQuizzes = lazy(() => import("./pages/student/PracticeQuizzes"));
+const Certificates = lazy(() => import("./pages/student/Certificates"));
+const Notifications = lazy(() => import("./pages/student/Notifications"));
+const StudentActivityLog = lazy(() => import("./pages/student/StudentActivityLog"));
+const TeacherActivityLog = lazy(() => import("./pages/teacher/TeacherActivityLog"));
+const AdminActivityLog = lazy(() => import("./pages/admin/AdminActivityLog"));
+const KhaltiReturn = lazy(() => import("./pages/payment/KhaltiReturn"));
+const Maintenance = lazy(() => import("./pages/Maintenance"));
+const NotFound = lazy(() => import("./pages/errors/NotFound"));
+const Unauthorized = lazy(() => import("./pages/errors/Unauthorized"));
 
 /** Sets document title from app settings (dynamic). */
 function DocumentTitle() {
@@ -72,6 +69,23 @@ function DocumentTitle() {
     if (appName) document.title = `${appName} – Learn, Grow, Achieve`;
   }, [appName]);
   return null;
+}
+
+function RouteFallback() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "50vh",
+        color: "#64748b",
+        fontSize: "0.95rem",
+      }}
+    >
+      Loading…
+    </div>
+  );
 }
 
 const API_HOST = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
@@ -135,6 +149,7 @@ const App = () => {
       <DocumentTitle />
       <MaintenanceWatcher />
 
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/" element={<HomeOrRedirect />} />
         <Route path="/course/:id" element={<PublicCourseDetail />} />
@@ -319,6 +334,14 @@ const App = () => {
           }
         />
         <Route
+          path="/teacher/student/:studentId"
+          element={
+            <ProtectedRoute allowRoles={["teacher"]}>
+              <TeacherStudentDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/teacher/mcq-attempts"
           element={
             <ProtectedRoute allowRoles={["teacher"]}>
@@ -331,6 +354,14 @@ const App = () => {
           element={
             <ProtectedRoute allowRoles={["teacher"]}>
               <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/activity-log"
+          element={
+            <ProtectedRoute allowRoles={["teacher"]}>
+              <TeacherActivityLog />
             </ProtectedRoute>
           }
         />
@@ -457,6 +488,22 @@ const App = () => {
           }
         />
         <Route
+          path="/admin/activity-log"
+          element={
+            <ProtectedRoute allowRoles={["admin"]}>
+              <AdminActivityLog />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/activity-log"
+          element={
+            <ProtectedRoute allowRoles={["student"]}>
+              <StudentActivityLog />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/student/enrolled-courses"
           element={
             <ProtectedRoute allowRoles={["student"]}>
@@ -520,6 +567,7 @@ const App = () => {
         {/* ✅ 404 - Catch all unknown routes */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
     </Router>
   );
 };

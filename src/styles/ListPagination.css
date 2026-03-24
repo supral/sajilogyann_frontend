@@ -1,0 +1,70 @@
+.list-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+}
+
+.list-pagination--flush-top {
+  margin-top: 0;
+}
+
+.list-pagination__info {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.list-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.list-pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.list-pagination__btn:hover:not(:disabled) {
+  background: rgba(47, 107, 255, 0.08);
+  border-color: rgba(47, 107, 255, 0.35);
+  color: #2563eb;
+}
+
+.list-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.list-pagination__page {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #475569;
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-main .list-pagination {
+  background: #f8fafc;
+}

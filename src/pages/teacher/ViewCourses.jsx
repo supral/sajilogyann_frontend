@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import "../../styles/ViewCourses.css";
 import { useNavigate } from "react-router-dom";
 import TeacherSidebar from "./TeacherSidebar";
@@ -19,6 +19,8 @@ const getStoredUser = () => {
   }
 };
 
+const COURSES_PAGE_SIZE = 10;
+
 const ViewCourses = () => {
   const navigate = useNavigate();
 
@@ -31,6 +33,7 @@ const ViewCourses = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [archivingId, setArchivingId] = useState(null);
+  const [coursesPage, setCoursesPage] = useState(1);
 
   // protect page (extra safety)
   useEffect(() => {
@@ -47,7 +50,7 @@ const ViewCourses = () => {
     // eslint-disable-next-line
   }, []);
 
-  const loadMyCourses = async () => {
+  const loadMyCourses = useCallback(async () => {
     setLoading(true);
     setError("");
     setCourses([]);
@@ -130,12 +133,25 @@ const ViewCourses = () => {
         // Otherwise continue to next URL
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadMyCourses();
-    // eslint-disable-next-line
-  }, []);
+  }, [loadMyCourses]);
+
+  const coursesTotalPages = Math.max(
+    1,
+    Math.ceil(courses.length / COURSES_PAGE_SIZE)
+  );
+  const coursesPageSafe = Math.min(coursesPage, coursesTotalPages);
+  const pagedCourses = courses.slice(
+    (coursesPageSafe - 1) * COURSES_PAGE_SIZE,
+    coursesPageSafe * COURSES_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    if (coursesPage > coursesTotalPages) setCoursesPage(coursesTotalPages);
+  }, [coursesPage, coursesTotalPages]);
 
   const handleArchive = async (courseId, courseTitle, e) => {
     e.stopPropagation(); // Prevent card click
@@ -162,7 +178,12 @@ const ViewCourses = () => {
       }
 
       // Remove from list
-      setCourses(prev => prev.filter(c => c._id !== courseId));
+      setCourses((prev) => {
+        const next = prev.filter((c) => c._id !== courseId);
+        const pages = Math.max(1, Math.ceil(next.length / COURSES_PAGE_SIZE));
+        setCoursesPage((p) => Math.min(p, pages));
+        return next;
+      });
       alert(`"${courseTitle}" has been archived. You can find it in Archived Courses.`);
     } catch (err) {
       alert(err.message || "Failed to archive course");
@@ -272,160 +293,113 @@ const ViewCourses = () => {
               </div>
             ) : courses && courses.length > 0 ? (
               <div style={{ marginTop: 20 }}>
-                <div 
-                  className="course-grid" 
-                  style={{ 
-                    marginTop: 14,
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                    gap: "1.5rem",
-                    width: "100%"
+                <p
+                  style={{
+                    margin: "0 0 12px",
+                    fontSize: "0.875rem",
+                    color: "#64748b",
                   }}
                 >
-                  {courses.map((course, index) => {
-                      const courseId = course._id || course.id;
-                      
-                      if (!courseId) {
-                        return null;
-                      }
-
-                      const isArchiving = archivingId === courseId;
-                      
-                      return (
-                        <div
-                          key={courseId || `course-${index}`}
-                          className="course-card clickable"
-                          onClick={() => {
-                            navigate(`/course-detail/${courseId}`);
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              navigate(`/course-detail/${courseId}`);
-                            }
-                          }}
-                          style={{
-                            cursor: "pointer",
-                            minHeight: "180px",
-                            background: "linear-gradient(145deg, #ffffff 0%, #f8faff 50%, #f0f4ff 100%)",
-                            border: "1px solid rgba(37, 99, 235, 0.1)",
-                            borderRadius: "14px",
-                            padding: "1.5rem",
-                            display: "flex",
-                            flexDirection: "column",
-                            visibility: "visible",
-                            opacity: 1,
-                            transition: "all 0.3s ease",
-                            position: "relative"
-                          }}
-                        >
-                          <h3 style={{ 
-                            marginTop: 0, 
-                            fontSize: "1.15rem",
-                            color: "#1e293b",
-                            marginBottom: "0.5rem",
-                            fontWeight: 700
-                          }}>
-                            {course.title || "Untitled Course"}
-                          </h3>
-
-                          <p className="course-category" style={{
-                            color: "#2563eb",
-                            fontSize: "0.85rem",
-                            marginBottom: "0.5rem",
-                            fontWeight: 600
-                          }}>
-                            <i className="fa-solid fa-tag"></i>{" "}
-                            {course.category || "-"}
-                          </p>
-
-                          <p className="course-desc" style={{
-                            fontSize: "0.875rem",
-                            color: "#64748b",
-                            marginBottom: "0.8rem",
-                            lineHeight: "1.5",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            flex: 1
-                          }}>
-                            {course.description || "No description"}
-                          </p>
-
-                          <p className="course-duration" style={{
-                            fontSize: "0.85rem",
-                            color: "#475569",
-                            marginBottom: "1rem"
-                          }}>
-                            <i className="fa-regular fa-clock"></i>{" "}
-                            {course.duration || "-"}
-                          </p>
-
-                          {/* Action buttons */}
-                          <div style={{ 
-                            display: "flex", 
-                            gap: "10px", 
-                            marginTop: "auto",
-                            borderTop: "1px solid rgba(37, 99, 235, 0.08)",
-                            paddingTop: "12px"
-                          }}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
+                  {courses.length} course{courses.length !== 1 ? "s" : ""} ·{" "}
+                  {COURSES_PAGE_SIZE} per page · click a row to open course details
+                </p>
+                <div className="vc-tableWrap">
+                  <table className="vc-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Duration</th>
+                        <th>Description</th>
+                        <th>Created</th>
+                        <th style={{ width: 120 }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedCourses.map((course, index) => {
+                        const courseId = course._id || course.id;
+                        if (!courseId) return null;
+                        const isArchiving = archivingId === courseId;
+                        const desc = (course.description || "").trim();
+                        const descShort =
+                          desc.length > 80 ? `${desc.slice(0, 80)}…` : desc || "—";
+                        return (
+                          <tr
+                            key={courseId || `course-${index}`}
+                            className="vc-table__row"
+                            onClick={() => navigate(`/course-detail/${courseId}`)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
                                 navigate(`/course-detail/${courseId}`);
-                              }}
-                              style={{
-                                flex: 1,
-                                padding: "8px 12px",
-                                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "8px",
-                                fontSize: "0.85rem",
-                                fontWeight: "700",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: "6px"
-                              }}
-                            >
-                              <i className="fa-solid fa-eye"></i> View
-                            </button>
-                            <button
-                              onClick={(e) => handleArchive(courseId, course.title, e)}
-                              disabled={isArchiving}
-                              style={{
-                                padding: "8px 12px",
-                                background: isArchiving ? "#94a3b8" : "#f1f5f9",
-                                color: isArchiving ? "white" : "#64748b",
-                                border: "1px solid #e2e8f0",
-                                borderRadius: "8px",
-                                fontSize: "0.85rem",
-                                fontWeight: "600",
-                                cursor: isArchiving ? "not-allowed" : "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: "6px",
-                                transition: "all 0.2s ease"
-                              }}
-                              title="Archive this course"
-                            >
-                              {isArchiving ? (
-                                <i className="fa-solid fa-spinner fa-spin"></i>
-                              ) : (
-                                <i className="fa-solid fa-box-archive"></i>
-                              )}
-                              {isArchiving ? "..." : "Archive"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                              }
+                            }}
+                          >
+                            <td className="vc-table__title">
+                              {course.title || "Untitled Course"}
+                            </td>
+                            <td>{course.category || "—"}</td>
+                            <td>{course.duration ?? "—"}</td>
+                            <td className="vc-table__desc" title={desc || undefined}>
+                              {descShort}
+                            </td>
+                            <td className="vc-table__muted">
+                              {course.createdAt
+                                ? new Date(course.createdAt).toLocaleDateString()
+                                : "—"}
+                            </td>
+                            <td className="vc-table__actions">
+                              <button
+                                type="button"
+                                className="vc-table__btn vc-table__btn--archive"
+                                onClick={(e) =>
+                                  handleArchive(courseId, course.title, e)
+                                }
+                                disabled={isArchiving}
+                                title="Archive"
+                              >
+                                {isArchiving ? (
+                                  <i className="fa-solid fa-spinner fa-spin" />
+                                ) : (
+                                  <i className="fa-solid fa-box-archive" />
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
+
+                {coursesTotalPages > 1 && (
+                  <div className="vc-pagination">
+                    <button
+                      type="button"
+                      className="vc-pagination__btn"
+                      disabled={coursesPageSafe <= 1}
+                      onClick={() => setCoursesPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </button>
+                    <span className="vc-pagination__info">
+                      Page {coursesPageSafe} of {coursesTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="vc-pagination__btn"
+                      disabled={coursesPageSafe >= coursesTotalPages}
+                      onClick={() =>
+                        setCoursesPage((p) =>
+                          Math.min(coursesTotalPages, p + 1)
+                        )
+                      }
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ 

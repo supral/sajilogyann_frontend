@@ -4,9 +4,23 @@ import {
   teacherGetMcqAttempts,
   teacherGetMyCourses,
 } from "../../services/api";
+import StudentAvatar from "../../components/teacher/StudentAvatar";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const MCQ_ATTEMPTS_PAGE_SIZE = 15;
+
+const attemptCourseIdStr = (a) => {
+  if (!a?.courseId) return "";
+  if (typeof a.courseId === "object" && a.courseId._id != null) {
+    return String(a.courseId._id);
+  }
+  return String(a.courseId);
+};
 
 const McqAttempts = () => {
   const [attempts, setAttempts] = useState([]);
+  const [totalAttemptsCount, setTotalAttemptsCount] = useState(0);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,6 +48,13 @@ const McqAttempts = () => {
       ]);
 
       setAttempts(Array.isArray(attemptsData?.attempts) ? attemptsData.attempts : []);
+      const total =
+        typeof attemptsData?.totalAttempts === "number"
+          ? attemptsData.totalAttempts
+          : Array.isArray(attemptsData?.attempts)
+            ? attemptsData.attempts.length
+            : 0;
+      setTotalAttemptsCount(Math.max(0, total));
 
       // Use courses from attempts if available, otherwise use from courses endpoint
       if (Array.isArray(attemptsData?.courses) && attemptsData.courses.length > 0) {
@@ -53,11 +74,8 @@ const McqAttempts = () => {
     let filtered = attempts;
 
     if (selectedCourse !== "all") {
-      filtered = filtered.filter((a) => {
-        const courseId = String(a.courseId || a._id || "");
-        const selectedId = String(selectedCourse);
-        return courseId === selectedId;
-      });
+      const selectedId = String(selectedCourse);
+      filtered = filtered.filter((a) => attemptCourseIdStr(a) === selectedId);
     }
 
     if (selectedResult !== "all") {
@@ -77,27 +95,34 @@ const McqAttempts = () => {
     return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [attempts, selectedCourse, selectedResult, searchTerm]);
 
+  const {
+    page: attemptPage,
+    setPage: setAttemptPage,
+    totalPages: attemptTotalPages,
+    pageItems: pagedAttempts,
+    total: attemptListTotal,
+    from: attemptFrom,
+    to: attemptTo,
+  } = useListPagination(filteredAttempts, {
+    pageSize: MCQ_ATTEMPTS_PAGE_SIZE,
+    resetDeps: [selectedCourse, selectedResult, searchTerm],
+  });
+
   const stats = useMemo(() => {
+    const n = attempts.length;
+    const sumPct = attempts.reduce((sum, a) => {
+      const pct =
+        a.totalMarks > 0 ? (a.marksObtained / a.totalMarks) * 100 : 0;
+      return sum + pct;
+    }, 0);
+    const avgScore = n > 0 ? Math.round((sumPct / n) * 100) / 100 : 0;
     return {
-      total: attempts.length,
+      total: totalAttemptsCount || n,
       passed: attempts.filter((a) => a.result === "pass").length,
       failed: attempts.filter((a) => a.result === "fail").length,
-      avgScore:
-        attempts.length > 0
-          ? Math.round(
-              (attempts.reduce((sum, a) => {
-                const percent =
-                  a.totalMarks > 0
-                    ? (a.marksObtained / a.totalMarks) * 100
-                    : 0;
-                return sum + percent;
-              }, 0) /
-                attempts.length) *
-                100
-            ) / 100
-          : 0,
+      avgScore,
     };
-  }, [attempts]);
+  }, [attempts, totalAttemptsCount]);
 
   const getScorePercent = (attempt) => {
     if (!attempt.totalMarks || attempt.totalMarks === 0) return 0;
@@ -116,8 +141,39 @@ const McqAttempts = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
+      {!loading && !error && (attempts.length > 0 || totalAttemptsCount > 0) && (
+        <p className="teacher-dashboard-metrics-line enrolled-metrics-line" aria-live="polite">
+          <span>
+            <strong>{stats.total}</strong> total attempts
+          </span>
+          <span className="teacher-dashboard-metrics-sep" aria-hidden>
+            ·
+          </span>
+          <span>
+            <strong>{stats.passed}</strong> passed
+          </span>
+          <span className="teacher-dashboard-metrics-sep" aria-hidden>
+            ·
+          </span>
+          <span>
+            <strong>{stats.failed}</strong> failed
+          </span>
+          <span className="teacher-dashboard-metrics-sep" aria-hidden>
+            ·
+          </span>
+          <span>
+            avg <strong>{stats.avgScore}%</strong>
+            {attempts.length > 0 &&
+            attempts.length < totalAttemptsCount &&
+            totalAttemptsCount > 0 ? (
+              <span className="mcq-metrics-hint"> (from latest {attempts.length} loaded)</span>
+            ) : null}
+          </span>
+        </p>
+      )}
+
+      {/* Stats Cards — single row on desktop */}
+      <div className="stats-grid stats-grid--kpi-row">
         <div className="stat-card stat-blue">
           <div className="stat-icon">
             <i className="fa-solid fa-clipboard-list"></i>
@@ -230,7 +286,7 @@ const McqAttempts = () => {
             Retry
           </button>
         </div>
-      ) : filteredAttempts.length === 0 ? (
+      ) : attemptListTotal === 0 ? (
         <div className="empty-state">
           <i className="fa-solid fa-clipboard-list"></i>
           <h3>No attempts found</h3>
@@ -242,6 +298,15 @@ const McqAttempts = () => {
         </div>
       ) : (
         <div className="attempts-table-container">
+          <ListPaginationBar
+            page={attemptPage}
+            totalPages={attemptTotalPages}
+            onPageChange={setAttemptPage}
+            from={attemptFrom}
+            to={attemptTo}
+            total={attemptListTotal}
+            flushTop
+          />
           <table className="attempts-table">
             <thead>
               <tr>
@@ -255,15 +320,16 @@ const McqAttempts = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredAttempts.map((attempt, idx) => {
+              {pagedAttempts.map((attempt, idx) => {
                 const scorePercent = getScorePercent(attempt);
                 return (
                   <tr key={attempt._id || attempt.id || idx}>
                     <td>
                       <div className="student-name-cell">
-                        <div className="student-avatar">
-                          {(attempt.studentName || "S")[0].toUpperCase()}
-                        </div>
+                        <StudentAvatar
+                          profileImage={attempt.profileImage}
+                          name={attempt.studentName}
+                        />
                         <span>{attempt.studentName || "Student"}</span>
                       </div>
                     </td>
@@ -309,6 +375,14 @@ const McqAttempts = () => {
               })}
             </tbody>
           </table>
+          <ListPaginationBar
+            page={attemptPage}
+            totalPages={attemptTotalPages}
+            onPageChange={setAttemptPage}
+            from={attemptFrom}
+            to={attemptTo}
+            total={attemptListTotal}
+          />
         </div>
       )}
     </div>

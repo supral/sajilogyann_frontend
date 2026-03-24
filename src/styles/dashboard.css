@@ -21,11 +21,184 @@
 .sd-hero {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   gap: 12px;
   margin-bottom: 14px;
   animation: fadeInDown 0.6s ease-out;
   position: relative;
+}
+
+.sd-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sd-hero-copy {
+  min-width: 0;
+}
+
+.dash-hero-avatar-btn {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 2px solid rgba(37, 99, 235, 0.35);
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.08);
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-hero-avatar-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+}
+
+.dash-hero-avatar-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.dash-hero-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dash-hero-avatar-initials {
+  font-weight: 900;
+  font-size: 1.25rem;
+  color: #1d4ed8;
+  user-select: none;
+}
+
+/* Profile details modal (student dashboard) */
+.dash-profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.dash-profile-modal {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px 22px 20px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.dash-profile-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #475569;
+}
+
+.dash-profile-modal-close:hover {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.dash-profile-modal-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.dash-profile-modal-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(37, 99, 235, 0.25);
+}
+
+.dash-profile-modal-avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.1);
+  font-weight: 900;
+  font-size: 1.75rem;
+  color: #1d4ed8;
+}
+
+.dash-profile-modal-title {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: center;
+}
+
+.dash-profile-modal-dl {
+  margin: 0 0 18px;
+}
+
+.dash-profile-modal-dl > div {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 8px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  font-size: 0.92rem;
+}
+
+.dash-profile-modal-dl > div:last-child {
+  border-bottom: 0;
+}
+
+.dash-profile-modal-dl dt {
+  margin: 0;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.dash-profile-modal-dl dd {
+  margin: 0;
+  font-weight: 650;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.dash-profile-modal-primary {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+}
+
+.dash-profile-modal-primary:hover {
+  filter: brightness(1.05);
 }
 
 .sd-hero::after {
@@ -240,6 +413,124 @@
   width: 18px;
   color: #334155;
   transition: all 0.3s ease;
+}
+
+/* Enrolled shortcuts block (StudentDashboard) — same visual language as .sd-sideList li */
+.sd-sideSection {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.sd-sideSectionTitle {
+  padding: 0 10px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sd-sideEnrolledList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.sd-sideEnrolledItem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 850;
+  color: #0f172a;
+  padding: 10px 10px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.7);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.sd-sideEnrolledItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 0;
+  background: #2563eb;
+  border-radius: 0 3px 3px 0;
+  transition: all 0.3s ease;
+}
+
+.sd-sideEnrolledItem:hover {
+  background: rgba(248, 250, 252, 1);
+  border-color: rgba(37, 99, 235, 0.2);
+  transform: translateX(6px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.sd-sideEnrolledItem:hover::before {
+  transform: translateY(-50%) scaleY(1);
+  height: 60%;
+}
+
+.sd-sideEnrolledItem:hover .sd-sideEnrolledIcon {
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+.sd-sideEnrolledItem.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.sd-sideEnrolledItem.active::before {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scaleY(1);
+  height: 60%;
+}
+
+.sd-sideEnrolledItem.active .sd-sideEnrolledIcon {
+  color: #fff;
+}
+
+.sd-sideEnrolledItem.active:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.sd-sideEnrolledIcon {
+  width: 18px;
+  flex-shrink: 0;
+  color: #334155;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sd-sideEnrolledTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.sd-sideSectionEmpty {
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #64748b;
+  font-style: italic;
 }
 
 /* Main */
@@ -1601,6 +1892,148 @@ details[open] .scd-chevron {
 
 .scd-content {
   padding: 16px;
+}
+
+/* Course detail: lesson panel fills viewport below navbar */
+.scd-page--fill {
+  min-height: calc(100dvh - 72px);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.scd-page--fill .scd-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: min(1400px, 100%);
+}
+
+.scd-page--fill .scd-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scd-page--fill .scd-header {
+  flex-shrink: 0;
+}
+
+.scd-page--fill .scd-body {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.scd-page--fill .scd-body > aside,
+.scd-page--fill .scd-body > main {
+  min-height: 0;
+}
+
+.scd-page--fill .scd-sidebar {
+  overflow-y: auto;
+  max-height: none;
+}
+
+.scd-content--lesson {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scd-page--fill .scd-content--lesson {
+  padding: 10px 12px 12px;
+}
+
+.scd-lesson-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scd-page--fill .slv-content.slv-content--fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  margin-bottom: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.scd-lesson-column {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scd-lesson-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scd-lesson-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.scd-viewer-surface {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.scd-viewer-surface iframe {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  display: block;
+  background: #fff;
+}
+
+.scd-page--fill .slv-materials-section > .scd-viewer-surface,
+.scd-page--fill .slv-materials-section > .scd-viewer-surface--scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.scd-viewer-surface--scroll {
+  overflow: auto;
+}
+
+.scd-lesson-nav-bar {
+  flex-shrink: 0;
+  margin-top: 10px;
+}
+
+.scd-video-stage .slv-video-wrapper {
+  max-width: none;
+  flex: 1 1 auto;
+  min-height: 200px;
+  aspect-ratio: unset;
+  max-height: none;
+}
+
+.scd-video-stage .slv-video-player {
+  max-height: calc(100dvh - 320px);
 }
 
 .scd-content-empty {

@@ -26,6 +26,10 @@ import {
   teacherGetAnalytics,
   teacherGetMyCourses,
 } from "../../services/api";
+import ListPaginationBar from "../../components/ListPaginationBar";
+import { useListPagination } from "../../hooks/useListPagination";
+
+const ANALYTICS_COURSES_PAGE_SIZE = 8;
 
 const TeacherAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -87,31 +91,58 @@ const TeacherAnalytics = () => {
     };
   }, [analytics, selectedCourse]);
 
+  const courseAnalyticsList = useMemo(
+    () =>
+      Array.isArray(filteredAnalytics?.courseAnalytics)
+        ? filteredAnalytics.courseAnalytics
+        : [],
+    [filteredAnalytics]
+  );
+
+  const {
+    page: courseAnalyticsPage,
+    setPage: setCourseAnalyticsPage,
+    totalPages: courseAnalyticsTotalPages,
+    pageItems: pagedCourseAnalytics,
+    total: courseAnalyticsTotal,
+    from: courseAnalyticsFrom,
+    to: courseAnalyticsTo,
+  } = useListPagination(courseAnalyticsList, {
+    pageSize: ANALYTICS_COURSES_PAGE_SIZE,
+    resetDeps: [selectedCourse, analytics],
+  });
+
   return (
-    <div className="teacher-content-page">
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">Analytics & Reports</h2>
-          <p className="page-subtitle">Comprehensive insights into your teaching performance</p>
+    <div className="teacher-content-page teacher-analytics-page">
+      <div className="page-header analytics-page-header">
+        <div className="analytics-page-header__intro">
+          <h2 className="page-title">Analytics &amp; Reports</h2>
+          <p className="page-subtitle">
+            Engagement, assessments, and course outcomes — scoped to your teaching portfolio.
+          </p>
         </div>
-        <div className="header-actions">
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">All Courses</option>
-            {courses.map((c) => {
-              const courseId = String(c._id || c.id || "");
-              return (
-                <option key={courseId} value={courseId}>
-                  {c.title || "Untitled Course"}
-                </option>
-              );
-            })}
-          </select>
-          <button className="btn-secondary" onClick={loadAnalytics}>
-            <i className="fa-solid fa-rotate"></i> Refresh
+        <div className="header-actions analytics-header-toolbar">
+          <label className="analytics-scope-field">
+            <span className="analytics-scope-field__label">Course scope</span>
+            <select
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              className="filter-select analytics-scope-select"
+            >
+              <option value="all">All courses</option>
+              {courses.map((c) => {
+                const courseId = String(c._id || c.id || "");
+                return (
+                  <option key={courseId} value={courseId}>
+                    {c.title || "Untitled Course"}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+          <button type="button" className="btn-secondary analytics-refresh-btn" onClick={loadAnalytics}>
+            <i className="fa-solid fa-rotate" aria-hidden />
+            Refresh data
           </button>
         </div>
       </div>
@@ -137,8 +168,38 @@ const TeacherAnalytics = () => {
         </div>
       ) : (
         <>
-          {/* Overview Stats */}
-          <div className="stats-grid">
+          <p className="teacher-dashboard-metrics-line analytics-summary-line" aria-live="polite">
+            <span>
+              <strong>{filteredAnalytics.totalStudents}</strong> students
+            </span>
+            <span className="teacher-dashboard-metrics-sep" aria-hidden>
+              ·
+            </span>
+            <span>
+              <strong>{filteredAnalytics.totalEnrollments}</strong> enrollments
+            </span>
+            <span className="teacher-dashboard-metrics-sep" aria-hidden>
+              ·
+            </span>
+            <span>
+              <strong>{filteredAnalytics.totalAttempts}</strong> MCQ attempts
+            </span>
+            <span className="teacher-dashboard-metrics-sep" aria-hidden>
+              ·
+            </span>
+            <span>
+              <strong>{filteredAnalytics.passRate}%</strong> pass rate
+            </span>
+            <span className="teacher-dashboard-metrics-sep" aria-hidden>
+              ·
+            </span>
+            <span>
+              <strong>{filteredAnalytics.avgScore}%</strong> avg. score
+            </span>
+          </p>
+
+          {/* Overview Stats — single horizontal row on desktop */}
+          <div className="stats-grid stats-grid--analytics-row">
             <div className="stat-card stat-blue">
               <div className="stat-icon">
                 <i className="fa-solid fa-users"></i>
@@ -201,12 +262,27 @@ const TeacherAnalytics = () => {
           </div>
 
           {/* Course-wise Analytics */}
-          <div className="analytics-section">
-            <h3 className="section-title">
-              <i className="fa-solid fa-book"></i> Course Performance
-            </h3>
+          <div className="analytics-section analytics-section--elevated">
+            <div className="analytics-section__head">
+              <h3 className="section-title">
+                <i className="fa-solid fa-book" aria-hidden />
+                Course performance
+              </h3>
+              <p className="analytics-section__desc">
+                Per-course reach, activity, and learner progress at a glance.
+              </p>
+            </div>
+            <ListPaginationBar
+              page={courseAnalyticsPage}
+              totalPages={courseAnalyticsTotalPages}
+              onPageChange={setCourseAnalyticsPage}
+              from={courseAnalyticsFrom}
+              to={courseAnalyticsTo}
+              total={courseAnalyticsTotal}
+              flushTop
+            />
             <div className="course-analytics-grid">
-              {filteredAnalytics.courseAnalytics.map((course) => (
+              {pagedCourseAnalytics.map((course) => (
                 <div key={course.courseId} className="course-analytics-card">
                   <div className="course-analytics-header">
                     <h4>{course.courseName}</h4>
@@ -247,10 +323,16 @@ const TeacherAnalytics = () => {
           </div>
 
           {/* Performance Trends - Dynamic Charts */}
-          <div className="analytics-section">
-            <h3 className="section-title">
-              <i className="fa-solid fa-chart-bar"></i> Performance Trends
-            </h3>
+          <div className="analytics-section analytics-section--elevated">
+            <div className="analytics-section__head">
+              <h3 className="section-title">
+                <i className="fa-solid fa-chart-bar" aria-hidden />
+                Performance trends
+              </h3>
+              <p className="analytics-section__desc">
+                Visual breakdowns for comparison, distribution, and engagement over your catalog.
+              </p>
+            </div>
 
             {filteredAnalytics.courseAnalytics && filteredAnalytics.courseAnalytics.length > 0 ? (
               <div className="performance-charts-grid">
@@ -586,6 +668,15 @@ const TeacherAnalytics = () => {
                   <h4 className="chart-title">
                     <i className="fa-solid fa-table"></i> Detailed Performance Summary
                   </h4>
+                  <ListPaginationBar
+                    page={courseAnalyticsPage}
+                    totalPages={courseAnalyticsTotalPages}
+                    onPageChange={setCourseAnalyticsPage}
+                    from={courseAnalyticsFrom}
+                    to={courseAnalyticsTo}
+                    total={courseAnalyticsTotal}
+                    flushTop
+                  />
                   <div className="performance-table-container">
                     <table className="performance-table">
                       <thead>
@@ -600,14 +691,14 @@ const TeacherAnalytics = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredAnalytics.courseAnalytics.map((course, idx) => {
+                        {pagedCourseAnalytics.map((course, idx) => {
                           // Calculate performance score (weighted average)
                           const maxAttempts = Math.max(
-                            ...filteredAnalytics.courseAnalytics.map((c) => c.attempts || 0),
+                            ...courseAnalyticsList.map((c) => c.attempts || 0),
                             1
                           );
                           const maxStudents = Math.max(
-                            ...filteredAnalytics.courseAnalytics.map((c) => c.students || 0),
+                            ...courseAnalyticsList.map((c) => c.students || 0),
                             1
                           );
                           const performanceScore = Math.round(

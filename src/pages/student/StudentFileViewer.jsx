@@ -1,5 +1,5 @@
 // src/pages/student/StudentFileViewer.jsx
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import StudentNavbar from "./StudentNavbar";
 import Footer from "../../components/Footer";
@@ -54,18 +54,50 @@ const normalizeFileMeta = (meta) => {
   const url = buildFileUrl(path);
   if (!url) return null;
 
-  return { ...meta, path: path || meta?.path || "", url, displayName: fileName(meta) };
+  return {
+    ...meta,
+    path: path || meta?.path || "",
+    url,
+    displayName: fileName(meta),
+    mimeType: meta?.mimeType || meta?.mimetype || "",
+  };
 };
 
-const getOfficeViewerUrl = (fileUrl) => {
-  // Microsoft Office Online Viewer
+const getOfficeViewerUrl = (fileUrl, useGoogle = false) => {
+  if (useGoogle) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+  }
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
 };
 
 const guessType = (file) => {
+  const mime = String(file?.mimeType || "").toLowerCase();
+  if (mime.startsWith("image/")) return "image";
+  if (mime === "application/pdf" || mime.includes("pdf")) return "pdf";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  if (
+    mime.includes("wordprocessingml") ||
+    mime.includes("msword") ||
+    mime.includes("spreadsheetml") ||
+    mime.includes("excel") ||
+    mime.includes("officedocument") ||
+    mime.includes("presentationml") ||
+    mime.includes("powerpoint") ||
+    mime.includes("opendocument")
+  )
+    return "office";
+  if (
+    mime.startsWith("text/") ||
+    mime === "application/json" ||
+    mime === "application/xml" ||
+    mime === "application/csv"
+  )
+    return "text";
+
   const url = String(file?.url || "");
   const ext = url.split("?")[0].split(".").pop()?.toLowerCase() || "";
-  
+
   // Image formats - comprehensive list
   if (["png", "jpg", "jpeg", "jpe", "gif", "webp", "bmp", "svg", "ico", "tiff", "tif", "avif", "heic", "heif"].includes(ext)) return "image";
   
@@ -91,6 +123,7 @@ export default function StudentFileViewer() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id: courseId, chapterId } = useParams();
+  const stateChapterId = location.state?.chapterId;
 
   const [lessons, setLessons] = useState([]);
   const [, setCourse] = useState(null);
@@ -105,7 +138,9 @@ export default function StudentFileViewer() {
   const [selectedPostContent, setSelectedPostContent] = useState(null); // "caseStudy" or "mcq"
   const [officeViewerError, setOfficeViewerError] = useState({});
   const [useGoogleViewer, setUseGoogleViewer] = useState({});
-  
+  const [lessonPdfPage, setLessonPdfPage] = useState(1);
+  const [lessonPdfNumPages, setLessonPdfNumPages] = useState(null);
+
   const videoRef = useRef(null);
 
   const token = getToken();
@@ -211,7 +246,7 @@ export default function StudentFileViewer() {
   }, [allFiles, currentContentIndex]);
 
   // Load course and lessons
-  const loadCourse = async () => {
+  const loadCourse = useCallback(async () => {
     if (!courseId) return;
 
     setLoading(true);
@@ -233,7 +268,7 @@ export default function StudentFileViewer() {
 
           // Only set current lesson if chapterId is provided (from URL params)
           // Don't auto-select - wait for user to click
-          const lessonId = chapterId || location.state?.chapterId;
+          const lessonId = chapterId || stateChapterId;
           if (lessonId) {
             const found = lessonsList.find(
               (l) => String(l?._id) === String(lessonId)
@@ -252,12 +287,11 @@ export default function StudentFileViewer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, chapterId, stateChapterId, authHeader]);
 
   useEffect(() => {
     loadCourse();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run on mount/params change only
-  }, [courseId, chapterId]);
+  }, [loadCourse]);
 
   // Refresh course data when returning from MCQ (to unlock next lesson)
   useEffect(() => {
@@ -270,7 +304,7 @@ export default function StudentFileViewer() {
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [courseId, loading]);
+  }, [courseId, loading, loadCourse]);
 
   // Reset content state when lesson changes
   useEffect(() => {
@@ -310,6 +344,34 @@ export default function StudentFileViewer() {
       video.removeEventListener("ended", handleEnded);
     };
   }, [currentContent]);
+
+  useEffect(() => {
+    setLessonPdfPage(1);
+    setLessonPdfNumPages(null);
+  }, [currentContent?.url, currentContentIndex]);
+
+  const handleLessonNavNext = () => {
+    const isPdf = currentContent && guessType(currentContent) === "pdf";
+    if (isPdf && lessonPdfNumPages != null && lessonPdfPage < lessonPdfNumPages) {
+      setLessonPdfPage((p) => p + 1);
+      return;
+    }
+    handleNextContent();
+  };
+
+  const handleLessonNavPrev = () => {
+    const isPdf = currentContent && guessType(currentContent) === "pdf";
+    if (isPdf && lessonPdfPage > 1) {
+      setLessonPdfPage((p) => p - 1);
+      return;
+    }
+    handlePreviousContent();
+  };
+
+  const lessonNavPrevDisabled =
+    currentContent && guessType(currentContent) === "pdf"
+      ? lessonPdfPage <= 1 && currentContentIndex === 0
+      : currentContentIndex === 0;
 
   // Check if URL is publicly accessible (not localhost or private)
   const isPublicUrl = (url) => {
@@ -576,10 +638,27 @@ export default function StudentFileViewer() {
                         </h3>
                         
                         {guessType(currentContent) === "pdf" && (
-                          <PDFViewer 
-                            url={currentContent.url} 
-                            fileName={currentContent.displayName || currentContent.name}
-                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              minHeight: "min(78vh, 920px)",
+                              width: "100%",
+                            }}
+                          >
+                            <PDFViewer
+                              variant="embedded"
+                              hideBuiltInPageControls
+                              showZoom={false}
+                              url={currentContent.url}
+                              fileName={
+                                currentContent.displayName || currentContent.name
+                              }
+                              page={lessonPdfPage}
+                              onPageChange={setLessonPdfPage}
+                              onNumPagesReady={setLessonPdfNumPages}
+                            />
+                          </div>
                         )}
                         {guessType(currentContent) === "image" && (
                           <div style={{ width: "100%", textAlign: "center", maxHeight: "calc(100vh - 400px)", overflow: "auto" }}>
@@ -627,8 +706,9 @@ export default function StudentFileViewer() {
                                 src={getOfficeViewerUrl(currentContent.url, useGoogleViewer[currentContent.url])}
                                 style={{ 
                                   width: "100%", 
-                                  height: "600px",
-                                  maxHeight: "calc(100vh - 400px)", 
+                                  minHeight: "min(72vh, 820px)",
+                                  height: "min(72vh, 820px)",
+                                  maxHeight: "calc(100vh - 240px)", 
                                   border: "1px solid #e5e7eb", 
                                   borderRadius: "8px",
                                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
@@ -702,8 +782,9 @@ export default function StudentFileViewer() {
                               src={currentContent.url}
                               style={{ 
                                 width: "100%", 
-                                height: "500px",
-                                maxHeight: "calc(100vh - 400px)", 
+                                minHeight: "min(60vh, 640px)",
+                                height: "min(60vh, 640px)",
+                                maxHeight: "calc(100vh - 240px)", 
                                 border: "1px solid #e5e7eb", 
                                 borderRadius: "8px",
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
@@ -864,25 +945,44 @@ export default function StudentFileViewer() {
                       }}>
                         <button
                           className="sfv-btn"
-                          onClick={handlePreviousContent}
-                          disabled={currentContentIndex === 0}
-                          style={{ opacity: currentContentIndex === 0 ? 0.5 : 1, cursor: currentContentIndex === 0 ? "not-allowed" : "pointer" }}
+                          onClick={handleLessonNavPrev}
+                          disabled={lessonNavPrevDisabled}
+                          style={{
+                            opacity: lessonNavPrevDisabled ? 0.5 : 1,
+                            cursor: lessonNavPrevDisabled ? "not-allowed" : "pointer",
+                          }}
                         >
                           ← Previous
                         </button>
                         
                         <div style={{ textAlign: "center", color: "#64748b", fontSize: "0.95rem" }}>
-                          <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                            {currentContentIndex + 1} of {allFiles.length}
-                          </div>
-                          <div style={{ fontSize: "0.875rem" }}>
-                            {currentContent.category}
-                          </div>
+                          {currentContent &&
+                          guessType(currentContent) === "pdf" &&
+                          lessonPdfNumPages != null ? (
+                            <>
+                              <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                Page {lessonPdfPage} of {lessonPdfNumPages}
+                              </div>
+                              <div style={{ fontSize: "0.875rem" }}>
+                                Material {currentContentIndex + 1} of {allFiles.length} ·{" "}
+                                {currentContent.category}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                                {currentContentIndex + 1} of {allFiles.length}
+                              </div>
+                              <div style={{ fontSize: "0.875rem" }}>
+                                {currentContent.category}
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         <button
                           className="sfv-btn sfv-btn-primary"
-                          onClick={handleNextContent}
+                          onClick={handleLessonNavNext}
                           style={{ 
                             cursor: "pointer"
                           }}
